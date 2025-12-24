@@ -3,8 +3,8 @@ services:
     name: lol-ranked-new-meta
     env: go
     plan: free  # or starter, standard, pro
-    # Build command is auto-detected by Render for Go projects
-    # startCommand is also auto-detected (runs the built binary)
+    # Render will auto-detect Go and use: go build -o app
+    # Start command will be: ./app
     envVars:
       - key: RIOT_API_KEY
         sync: false  # Set this in Render dashboard
