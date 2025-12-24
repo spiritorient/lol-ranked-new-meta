@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: lol-ranked-new-meta
+    env: go
+    plan: free  # or starter, standard, pro
+    buildCommand: go mod download && go build -o server
+    startCommand: ./server
+    envVars:
+      - key: RIOT_API_KEY
+        sync: false  # Set this in Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false  # Set this in Render dashboard
+      - key: RIOT_API_REGION
+        value: americas  # Default, can override in dashboard
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini  # Default, can override in dashboard
+    healthCheckPath: /health
+

@@ -233,6 +233,20 @@ The deep dive analysis appears in the `champion_deep_dive` field of the response
 - WebSocket support for real-time updates
 - Multiple champion comparison analysis
 
+## Deployment
+
+### Deploying to Render.com
+
+This service is ready to deploy to Render.com. See [DEPLOY.md](./DEPLOY.md) for detailed deployment instructions.
+
+Quick steps:
+1. Push your code to GitHub (already done ✅)
+2. Connect your GitHub repository to Render
+3. Set environment variables: `RIOT_API_KEY` and `OPENAI_API_KEY`
+4. Deploy!
+
+The service will automatically use the `PORT` environment variable provided by Render.
+
 ## License
 
 This project is for educational purposes.

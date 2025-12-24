@@ -38,7 +38,10 @@ func main() {
 	log.Printf("  GET  /analyze-match-get?match_id=<match_id> - Analyze a match (convenience endpoint)")
 	log.Printf("  GET  /health - Health check")
 
-	if err := http.ListenAndServe(":"+cfg.ServerPort, nil); err != nil {
+	// Bind to all interfaces (0.0.0.0) for cloud deployment compatibility
+	addr := ":" + cfg.ServerPort
+	log.Printf("Server starting on %s", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
