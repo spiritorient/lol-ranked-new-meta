@@ -32,16 +32,22 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	// Serve frontend static files
-	// Serve static assets (CSS, JS) from /static/ prefix
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./frontend"))))
+	// Serve frontend static files (CSS, JS)
+	fs := http.FileServer(http.Dir("./frontend"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle("/style.css", fs)
+	http.Handle("/script.js", fs)
 	
-	// Serve index.html for all other routes (SPA routing)
+	// Serve index.html for root and non-API routes (SPA routing)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Only serve frontend if it's not an API route
-		if r.URL.Path == "/" || (r.URL.Path != "/analyze-match" && r.URL.Path != "/analyze-match-get" && r.URL.Path != "/health") {
-			http.ServeFile(w, r, "./frontend/index.html")
+		path := r.URL.Path
+		// Serve API routes normally (they're already registered above)
+		if path == "/analyze-match" || path == "/analyze-match-get" || path == "/health" {
+			// This won't be reached since those routes are registered first, but good to check
+			return
 		}
+		// Serve index.html for all other routes
+		http.ServeFile(w, r, "./frontend/index.html")
 	})
 
 	log.Printf("Server starting on port %s", cfg.ServerPort)
