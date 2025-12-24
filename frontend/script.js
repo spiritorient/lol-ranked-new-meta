@@ -1,4 +1,5 @@
-const API_URL = 'https://lol-ranked-new-meta.onrender.com'; // Update this with your Render URL
+// API URL - automatically uses same origin (works when frontend is served from backend)
+const API_URL = window.location.origin;
 
 let matchData = null;
 

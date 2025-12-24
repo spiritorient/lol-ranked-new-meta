@@ -24,13 +24,17 @@ func main() {
 	// Create handlers
 	matchHandler := handlers.NewMatchHandler(riotClient, openaiClient)
 
-	// Set up routes
+	// Set up API routes (must be before frontend to take precedence)
 	http.HandleFunc("/analyze-match", matchHandler.HandleAnalyzeMatch)
 	http.HandleFunc("/analyze-match-get", matchHandler.HandleAnalyzeMatchGET) // Convenience GET endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
+
+	// Serve frontend static files (must be last to catch all other routes)
+	fs := http.FileServer(http.Dir("./frontend"))
+	http.Handle("/", fs)
 
 	log.Printf("Server starting on port %s", cfg.ServerPort)
 	log.Printf("Endpoints available:")

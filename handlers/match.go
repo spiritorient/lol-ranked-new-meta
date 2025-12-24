@@ -25,8 +25,11 @@ func NewMatchHandler(riotClient *riot.Client, openaiClient *openai.Client) *Matc
 
 // HandleAnalyzeMatch handles requests to analyze a match
 func (h *MatchHandler) HandleAnalyzeMatch(w http.ResponseWriter, r *http.Request) {
-	// Set  headers if needed
+	// Set CORS headers for frontend access
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -82,7 +85,14 @@ func (h *MatchHandler) HandleAnalyzeMatch(w http.ResponseWriter, r *http.Request
 
 // HandleAnalyzeMatchGET handles GET requests (for testing convenience)
 func (h *MatchHandler) HandleAnalyzeMatchGET(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers for frontend access
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	matchID := r.URL.Query().Get("match_id")
 	if matchID == "" {
