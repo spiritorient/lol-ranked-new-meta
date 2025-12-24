@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-    "net/http"
+	"net/http"
 
 	"lol-ranked-new-meta/config"
 	"lol-ranked-new-meta/handlers"
@@ -32,12 +32,13 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	// Serve frontend static files (CSS, JS)
+	// Serve frontend static files (CSS, JS, images)
 	fs := http.FileServer(http.Dir("./frontend"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.Handle("/style.css", fs)
 	http.Handle("/script.js", fs)
-	
+	http.Handle("/logo.png", fs)
+
 	// Serve index.html for root and non-API routes (SPA routing)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
