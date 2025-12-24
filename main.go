@@ -32,9 +32,17 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	// Serve frontend static files (must be last to catch all other routes)
-	fs := http.FileServer(http.Dir("./frontend"))
-	http.Handle("/", fs)
+	// Serve frontend static files
+	// Serve static assets (CSS, JS) from /static/ prefix
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./frontend"))))
+	
+	// Serve index.html for all other routes (SPA routing)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Only serve frontend if it's not an API route
+		if r.URL.Path == "/" || (r.URL.Path != "/analyze-match" && r.URL.Path != "/analyze-match-get" && r.URL.Path != "/health") {
+			http.ServeFile(w, r, "./frontend/index.html")
+		}
+	})
 
 	log.Printf("Server starting on port %s", cfg.ServerPort)
 	log.Printf("Endpoints available:")
