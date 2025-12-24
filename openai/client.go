@@ -478,7 +478,6 @@ func parseStringArray(arr []interface{}) []string {
 	}
 	return result
 }
-}
 
 // extractFromContent is a fallback method to parse analysis from content
 func (c *Client) extractFromContent(content string) *types.MatchResponse {
