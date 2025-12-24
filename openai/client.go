@@ -354,13 +354,130 @@ Return structured data with:
 
 	choice := resp.Choices[0]
 	if choice.Message.FunctionCall != nil && choice.Message.FunctionCall.Arguments != "" {
-		var insights types.StructuredInsights
-		if err := json.Unmarshal([]byte(choice.Message.FunctionCall.Arguments), &insights); err == nil {
-			return &insights, nil
+		// Parse the function arguments into a map first
+		var rawData map[string]interface{}
+		if err := json.Unmarshal([]byte(choice.Message.FunctionCall.Arguments), &rawData); err != nil {
+			return nil, fmt.Errorf("failed to parse JSON: %w", err)
 		}
+
+		insights := &types.StructuredInsights{}
+
+		// Parse what_went_well
+		if ww, ok := rawData["what_went_well"].([]interface{}); ok {
+			insights.WhatWentWell = parseEvents(ww)
+		}
+
+		// Parse what_went_wrong
+		if ww, ok := rawData["what_went_wrong"].([]interface{}); ok {
+			insights.WhatWentWrong = parseEvents(ww)
+		}
+
+		// Parse critical_moments
+		if cm, ok := rawData["critical_moments"].([]interface{}); ok {
+			insights.CriticalMoments = parseCriticalMoments(cm)
+		}
+
+		// Parse item_analysis
+		if ia, ok := rawData["item_analysis"].(map[string]interface{}); ok {
+			insights.ItemAnalysis = &types.ItemAnalysis{}
+			if ta, ok := ia["timing_analysis"].(string); ok {
+				insights.ItemAnalysis.TimingAnalysis = ta
+			}
+			if om, ok := ia["opponent_matchup"].(string); ok {
+				insights.ItemAnalysis.OpponentMatchup = om
+			}
+			if recs, ok := ia["recommendations"].([]interface{}); ok {
+				insights.ItemAnalysis.Recommendations = parseStringArray(recs)
+			}
+		}
+
+		// Parse matchup_analysis
+		if ma, ok := rawData["matchup_analysis"].(map[string]interface{}); ok {
+			insights.MatchupAnalysis = &types.MatchupAnalysis{}
+			if lm, ok := ma["lane_matchup"].(string); ok {
+				insights.MatchupAnalysis.LaneMatchup = lm
+			}
+			if tc, ok := ma["team_composition"].(string); ok {
+				insights.MatchupAnalysis.TeamComposition = tc
+			}
+			if syn, ok := ma["synergies"].([]interface{}); ok {
+				insights.MatchupAnalysis.Synergies = parseStringArray(syn)
+			}
+			if cnt, ok := ma["counters"].([]interface{}); ok {
+				insights.MatchupAnalysis.Counters = parseStringArray(cnt)
+			}
+			if wc, ok := ma["win_conditions"].([]interface{}); ok {
+				insights.MatchupAnalysis.WinConditions = parseStringArray(wc)
+			}
+		}
+
+		return insights, nil
 	}
 
-	return nil, fmt.Errorf("failed to parse structured insights")
+	return nil, fmt.Errorf("no function call in response")
+}
+
+func parseEvents(events []interface{}) []types.SpecificEvent {
+	result := make([]types.SpecificEvent, 0, len(events))
+	for _, e := range events {
+		if eventMap, ok := e.(map[string]interface{}); ok {
+			event := types.SpecificEvent{}
+			if title, ok := eventMap["title"].(string); ok {
+				event.Title = title
+			}
+			if desc, ok := eventMap["description"].(string); ok {
+				event.Description = desc
+			}
+			if impact, ok := eventMap["impact"].(string); ok {
+				event.Impact = impact
+			}
+			if data, ok := eventMap["data"].([]interface{}); ok {
+				event.Data = parseStringArray(data)
+			}
+			if category, ok := eventMap["category"].(string); ok {
+				event.Category = category
+			}
+			result = append(result, event)
+		}
+	}
+	return result
+}
+
+func parseCriticalMoments(moments []interface{}) []types.CriticalMoment {
+	result := make([]types.CriticalMoment, 0, len(moments))
+	for _, m := range moments {
+		if momentMap, ok := m.(map[string]interface{}); ok {
+			moment := types.CriticalMoment{}
+			if title, ok := momentMap["title"].(string); ok {
+				moment.Title = title
+			}
+			if desc, ok := momentMap["description"].(string); ok {
+				moment.Description = desc
+			}
+			if outcome, ok := momentMap["outcome"].(string); ok {
+				moment.Outcome = outcome
+			}
+			if impact, ok := momentMap["impact"].(string); ok {
+				moment.Impact = impact
+			}
+			if data, ok := momentMap["data"].([]interface{}); ok {
+				moment.Data = parseStringArray(data)
+			}
+			result = append(result, moment)
+		}
+	}
+	return result
+}
+
+func parseStringArray(arr []interface{}) []string {
+	result := make([]string, 0, len(arr))
+	for _, v := range arr {
+		if str, ok := v.(string); ok {
+			result = append(result, str)
+		}
+	}
+	return result
+}
 }
 
 // extractFromContent is a fallback method to parse analysis from content
