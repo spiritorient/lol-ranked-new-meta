@@ -55,23 +55,24 @@ func (c *Client) AnalyzeMatch(ctx context.Context, matchSummary string, champion
 		},
 	}
 
-	systemPrompt := `You are an expert League of Legends coach and analyst. Your task is to analyze match data and provide:
-1. A comprehensive analysis of the match, highlighting key moments, strengths, and weaknesses
-2. Specific, actionable suggestions for improvement
-3. Coaching tips for future matches
+	systemPrompt := `You are an expert League of Legends coach providing DATA-DRIVEN, SPECIFIC analysis.
+CRITICAL: Analyze the ACTUAL events from this EXACT match using the provided data.
 
-Focus on practical advice that can help players improve their gameplay. Consider factors like:
-- Team composition and synergy
-- Objective control (dragons, barons, towers)
-- Individual performance (K/D/A, CS, gold, damage)
-- Game timing and decision-making
-- Vision control and map awareness`
+Your analysis must:
+- Reference specific numbers, stats, and achievements from this match
+- Identify what ACTUALLY happened, not generic patterns
+- Compare actual performance vs opponents using real data
+- Explain WHY specific events mattered based on the match outcome
+- Focus on concrete, measurable events that occurred in this game
 
-	userPrompt := fmt.Sprintf(`Please analyze this League of Legends match data and provide detailed coaching advice:
+Avoid generic advice. Instead, cite specific stats like "Team secured 3 dragons at 15, 22, and 28 minutes" or "ADC had 300 CS at 30 minutes vs opponent's 250".`
+
+	userPrompt := fmt.Sprintf(`Analyze this EXACT League of Legends match using the specific data provided:
 
 %s
 
-Provide your analysis, suggestions, and coaching tips.`, matchSummary)
+Provide analysis that references SPECIFIC NUMBERS, EVENTS, and STATS from this match. 
+Focus on what actually happened, not generic coaching advice.`, matchSummary)
 
 	// Create the chat completion request with function calling
 	req := openai.ChatCompletionRequest{
@@ -137,7 +138,7 @@ Provide your analysis, suggestions, and coaching tips.`, matchSummary)
 			}
 		}
 
-		// If champion/summoner filter is specified, generate deep dive analysis
+		// If champion/summoner filter is specified, generate deep dive analysis and structured insights
 		if championFilter != "" || summonerFilter != "" {
 			deepDive, err := c.AnalyzeChampionDeepDive(ctx, matchSummary, championFilter, summonerFilter)
 			if err != nil {
@@ -145,6 +146,12 @@ Provide your analysis, suggestions, and coaching tips.`, matchSummary)
 				response.ChampionDeepDive = "Failed to generate deep dive analysis: " + err.Error()
 			} else {
 				response.ChampionDeepDive = deepDive
+			}
+			
+			// Generate structured insights for interactive frontend
+			structuredInsights, err := c.GenerateStructuredInsights(ctx, matchSummary, championFilter, summonerFilter)
+			if err == nil {
+				response.StructuredInsights = structuredInsights
 			}
 		}
 
@@ -154,7 +161,7 @@ Provide your analysis, suggestions, and coaching tips.`, matchSummary)
 	// Fallback: extract from content if function calling didn't work as expected
 	response := c.extractFromContent(choice.Message.Content)
 
-	// If champion/summoner filter is specified, generate deep dive analysis
+	// If champion/summoner filter is specified, generate deep dive analysis and structured insights
 	if championFilter != "" || summonerFilter != "" {
 		deepDive, err := c.AnalyzeChampionDeepDive(ctx, matchSummary, championFilter, summonerFilter)
 		if err != nil {
@@ -162,6 +169,12 @@ Provide your analysis, suggestions, and coaching tips.`, matchSummary)
 			response.ChampionDeepDive = "Failed to generate deep dive analysis: " + err.Error()
 		} else {
 			response.ChampionDeepDive = deepDive
+		}
+		
+		// Generate structured insights for interactive frontend
+		structuredInsights, err := c.GenerateStructuredInsights(ctx, matchSummary, championFilter, summonerFilter)
+		if err == nil {
+			response.StructuredInsights = structuredInsights
 		}
 	}
 
@@ -175,30 +188,31 @@ func (c *Client) AnalyzeChampionDeepDive(ctx context.Context, matchSummary, cham
 		targetName = summonerFilter
 	}
 
-	systemPrompt := `You are an expert League of Legends coach specializing in detailed champion performance analysis. 
-Your task is to provide a comprehensive, in-depth analysis of a specific player's performance in a match.
-Focus on:
-- Champion-specific mechanics and execution
-- Decision-making patterns throughout the game
-- Itemization choices and build path effectiveness
-- Positioning and map awareness
-- Team fight participation and impact
-- Farming patterns and resource management
-- Vision control and warding patterns
-- Comparison with expected performance for that champion/role
-- Specific areas for improvement with actionable advice`
+	systemPrompt := `You are an expert League of Legends coach specializing in data-driven, specific match analysis. 
+CRITICAL: Focus on ACTUAL EVENTS and SPECIFIC DATA from this exact match, not generic archetypical advice.
 
-	userPrompt := fmt.Sprintf(`Please provide a detailed deep dive analysis for the player/champion marked as "[TARGET FOR DEEP DIVE]" in the following match data:
+Your analysis must:
+- Reference specific numbers, stats, and events from the match data provided
+- Explain what ACTUALLY happened, not what "usually" happens
+- Compare actual performance to opponent's actual performance using the data
+- Analyze item builds in context of the actual opponent champions faced
+- Identify concrete mistakes using specific match statistics
+- Highlight specific good plays using actual numbers and achievements
 
+Avoid generic advice like "ward more" - instead say "placed only X wards compared to opponent's Y" with specific impact.`
+
+	userPrompt := fmt.Sprintf(`Analyze the performance of %s in this EXACT match. Use the actual data provided.
+
+MATCH DATA:
 %s
 
-Focus specifically on %s's performance. Provide insights on:
-1. What they did well
-2. Critical mistakes or missed opportunities
-3. Champion-specific mechanics and combos
-4. Item build analysis
-5. Specific coaching points for improvement
-6. Role-specific recommendations`, matchSummary, targetName)
+Provide analysis focusing on SPECIFIC EVENTS AND NUMBERS from this match:
+1. What went well - cite specific stats (e.g., "Achieved 8.5 CS/min at 15 minutes, above average")
+2. What went wrong - cite specific failures (e.g., "Died 5 times before 10 minutes, giving enemy ADC 1500 gold")
+3. Critical moments - identify specific game-changing events using the data
+4. Item build analysis - evaluate items purchased in context of actual opponent champions
+5. Matchup performance - compare actual stats vs lane opponent (provided in data)
+6. Specific, actionable improvements based on this exact match's data`, targetName, matchSummary)
 
 	req := openai.ChatCompletionRequest{
 		Model: c.model,
@@ -225,6 +239,128 @@ Focus specifically on %s's performance. Provide insights on:
 	}
 
 	return resp.Choices[0].Message.Content, nil
+}
+
+// GenerateStructuredInsights creates structured, data-driven insights for interactive frontend
+func (c *Client) GenerateStructuredInsights(ctx context.Context, matchSummary, championFilter, summonerFilter string) (*types.StructuredInsights, error) {
+	targetName := championFilter
+	if summonerFilter != "" {
+		targetName = summonerFilter
+	}
+
+	// Define function schema for structured insights
+	structuredFunction := openai.FunctionDefinition{
+		Name:        "generate_structured_insights",
+		Description: "Generates structured, data-driven insights about a League of Legends match with specific events and statistics",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"what_went_well": map[string]interface{}{
+					"type": "array",
+					"items": map[string]interface{}{
+						"type": "object",
+						"properties": map[string]interface{}{
+							"title":       map[string]interface{}{"type": "string"},
+							"description": map[string]interface{}{"type": "string"},
+							"impact":      map[string]interface{}{"type": "string"},
+							"data":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+							"category":    map[string]interface{}{"type": "string"},
+						},
+					},
+				},
+				"what_went_wrong": map[string]interface{}{
+					"type": "array",
+					"items": map[string]interface{}{
+						"type": "object",
+						"properties": map[string]interface{}{
+							"title":       map[string]interface{}{"type": "string"},
+							"description": map[string]interface{}{"type": "string"},
+							"impact":      map[string]interface{}{"type": "string"},
+							"data":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+							"category":    map[string]interface{}{"type": "string"},
+						},
+					},
+				},
+				"critical_moments": map[string]interface{}{
+					"type": "array",
+					"items": map[string]interface{}{
+						"type": "object",
+						"properties": map[string]interface{}{
+							"title":       map[string]interface{}{"type": "string"},
+							"description": map[string]interface{}{"type": "string"},
+							"outcome":     map[string]interface{}{"type": "string"},
+							"impact":      map[string]interface{}{"type": "string"},
+							"data":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+						},
+					},
+				},
+				"item_analysis": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"timing_analysis":  map[string]interface{}{"type": "string"},
+						"opponent_matchup": map[string]interface{}{"type": "string"},
+						"recommendations":  map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+					},
+				},
+				"matchup_analysis": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"lane_matchup":    map[string]interface{}{"type": "string"},
+						"team_composition": map[string]interface{}{"type": "string"},
+						"synergies":       map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+						"counters":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+						"win_conditions":  map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+					},
+				},
+			},
+			"required": []string{"what_went_well", "what_went_wrong", "critical_moments"},
+		},
+	}
+
+	systemPrompt := `You are an expert League of Legends analyst. Generate STRUCTURED insights based on ACTUAL match data.
+CRITICAL: Only reference specific numbers, stats, and events from the provided match data.
+Each insight must cite actual data (e.g., "Died 3 times before 10 minutes" not "died early").`
+
+	userPrompt := fmt.Sprintf(`Generate structured insights for %s in this match. Use ONLY the actual data provided:
+
+%s
+
+Return structured data with:
+1. What went well - specific achievements with numbers
+2. What went wrong - specific failures with supporting data
+3. Critical moments - game-changing events with context
+4. Item analysis - evaluate items vs actual opponent champions
+5. Matchup analysis - compare actual performance vs lane opponent`, targetName, matchSummary)
+
+	req := openai.ChatCompletionRequest{
+		Model: c.model,
+		Messages: []openai.ChatCompletionMessage{
+			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
+			{Role: openai.ChatMessageRoleUser, Content: userPrompt},
+		},
+		Functions: []openai.FunctionDefinition{structuredFunction},
+		FunctionCall: map[string]interface{}{"name": "generate_structured_insights"},
+		Temperature: 0.3, // Lower temperature for more consistent structured output
+	}
+
+	resp, err := c.client.CreateChatCompletion(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate structured insights: %w", err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return nil, fmt.Errorf("no choices in response")
+	}
+
+	choice := resp.Choices[0]
+	if choice.Message.FunctionCall != nil && choice.Message.FunctionCall.Arguments != "" {
+		var insights types.StructuredInsights
+		if err := json.Unmarshal([]byte(choice.Message.FunctionCall.Arguments), &insights); err == nil {
+			return &insights, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to parse structured insights")
 }
 
 // extractFromContent is a fallback method to parse analysis from content

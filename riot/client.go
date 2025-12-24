@@ -135,9 +135,98 @@ func FormatMatchForAnalysis(match *types.RiotMatch, championFilter, summonerFilt
 	if targetParticipant != nil {
 		summary += "\n=== DETAILED STATS FOR TARGET PLAYER ===\n"
 		summary += FormatParticipantDeepDive(targetParticipant, match.Info.GameDuration)
+		
+		// Add opponent composition analysis
+		summary += "\n=== OPPONENT COMPOSITION ===\n"
+		summary += FormatOpponentComposition(match, targetParticipant)
+		
+		// Add item build timeline
+		summary += "\n=== ITEM BUILD TIMELINE ===\n"
+		summary += FormatItemBuildTimeline(targetParticipant, match.Info.GameDuration)
 	}
 
 	return summary
+}
+
+// FormatOpponentComposition provides opponent team composition analysis
+func FormatOpponentComposition(match *types.RiotMatch, targetParticipant *types.RiotParticipant) string {
+	var opponentTeam string
+	var allyTeam string
+	
+	if targetParticipant.TeamID == 100 {
+		opponentTeam = "Red"
+		allyTeam = "Blue"
+	} else {
+		opponentTeam = "Blue"
+		allyTeam = "Red"
+	}
+	
+	var comp string
+	comp += fmt.Sprintf("Your Team (%s):\n", allyTeam)
+	for _, p := range match.Info.Participants {
+		if p.TeamID == targetParticipant.TeamID {
+			comp += fmt.Sprintf("- %s (%s) - %s\n", p.SummonerName, p.ChampionName, p.TeamPosition)
+		}
+	}
+	
+	comp += fmt.Sprintf("\nOpponent Team (%s):\n", opponentTeam)
+	for _, p := range match.Info.Participants {
+		if p.TeamID != targetParticipant.TeamID {
+			comp += fmt.Sprintf("- %s (%s) - %s\n", p.SummonerName, p.ChampionName, p.TeamPosition)
+			
+			// Find lane opponent
+			if p.TeamPosition == targetParticipant.TeamPosition && p.TeamPosition != "" {
+				comp += fmt.Sprintf("  -> LANE OPPONENT: %s vs %s\n", targetParticipant.ChampionName, p.ChampionName)
+				comp += fmt.Sprintf("     Result: %d/%d/%d (You) vs %d/%d/%d (Opponent)\n",
+					targetParticipant.Kills, targetParticipant.Deaths, targetParticipant.Assists,
+					p.Kills, p.Deaths, p.Assists)
+				comp += fmt.Sprintf("     CS: %d (You) vs %d (Opponent)\n",
+					targetParticipant.TotalMinionsKilled, p.TotalMinionsKilled)
+				comp += fmt.Sprintf("     Gold: %d (You) vs %d (Opponent)\n",
+					targetParticipant.GoldEarned, p.GoldEarned)
+			}
+		}
+	}
+	
+	return comp
+}
+
+// FormatItemBuildTimeline creates a timeline of item purchases
+func FormatItemBuildTimeline(participant *types.RiotParticipant, gameDuration int64) string {
+	var timeline string
+	items := []struct {
+		slot int
+		id   int
+		name string
+	}{
+		{0, participant.Item0, "Item 1"},
+		{1, participant.Item1, "Item 2"},
+		{2, participant.Item2, "Item 3"},
+		{3, participant.Item3, "Item 4"},
+		{4, participant.Item4, "Item 5"},
+		{5, participant.Item5, "Item 6"},
+		{6, participant.Item6, "Trinket"},
+	}
+	
+	timeline += fmt.Sprintf("Total Items Purchased: %d\n", participant.ItemsPurchased)
+	timeline += "Final Build:\n"
+	
+	for _, item := range items {
+		if item.id != 0 {
+			timeline += fmt.Sprintf("- %s: Item ID %d", item.name, item.id)
+			if item.slot == 6 {
+				timeline += " (Trinket)"
+			}
+			timeline += "\n"
+		}
+	}
+	
+	// Calculate approximate timing (rough estimate based on gold earned)
+	goldPerMinute := float64(participant.GoldEarned) / (float64(gameDuration) / 60.0)
+	timeline += fmt.Sprintf("\nGold Income: %.0f gold/minute\n", goldPerMinute)
+	timeline += "Note: Exact item purchase times require timeline data from Riot API match timeline endpoint\n"
+	
+	return timeline
 }
 
 // FormatParticipantDeepDive creates a detailed analysis string for a specific participant
