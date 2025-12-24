@@ -3,8 +3,8 @@ services:
     name: lol-ranked-new-meta
     env: go
     plan: free  # or starter, standard, pro
-    buildCommand: go mod download && go build -o server
-    startCommand: ./server
+    # Build command is auto-detected by Render for Go projects
+    # startCommand is also auto-detected (runs the built binary)
     envVars:
       - key: RIOT_API_KEY
         sync: false  # Set this in Render dashboard
