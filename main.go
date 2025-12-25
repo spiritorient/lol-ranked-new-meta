@@ -71,12 +71,26 @@ func main() {
 	mux.Handle("/style.css", fs)
 	mux.Handle("/script.js", fs)
 	mux.Handle("/logo.png", fs)
+	
+	// Serve whitepaper
+	mux.HandleFunc("/whitepaper", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./frontend/whitepaper.html")
+	})
+	mux.HandleFunc("/whitepaper.md", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./WHITEPAPER.md")
+	})
+	
+	// Serve riot.txt for Riot API verification
+	mux.HandleFunc("/riot.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		http.ServeFile(w, r, "./riot.txt")
+	})
 
 	// Serve index.html for root and non-API routes (SPA routing)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		// Serve API routes normally (they're already registered above)
-		if path == "/analyze-match" || path == "/analyze-match-get" || path == "/health" || path == "/analytics" {
+		if path == "/analyze-match" || path == "/analyze-match-get" || path == "/health" || path == "/analytics" || path == "/whitepaper" || path == "/whitepaper.md" || path == "/riot.txt" {
 			// This won't be reached since those routes are registered first, but good to check
 			return
 		}
@@ -95,6 +109,7 @@ func main() {
 	log.Printf("  POST /analyze-match - Analyze a match (requires JSON body with match_id)")
 	log.Printf("  GET  /analyze-match-get?match_id=<match_id> - Analyze a match (convenience endpoint)")
 	log.Printf("  GET  /health - Health check")
+	log.Printf("  GET  /riot.txt - Riot API verification file")
 
 	// Bind to all interfaces (0.0.0.0) for cloud deployment compatibility
 	addr := ":" + cfg.ServerPort
