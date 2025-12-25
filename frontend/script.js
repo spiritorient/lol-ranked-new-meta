@@ -4,14 +4,23 @@ const API_URL = window.location.origin;
 let matchData = null;
 
 async function analyzeMatch() {
-    const matchId = document.getElementById('matchId').value.trim();
+    const region = document.getElementById('region').value.trim();
+    const gameId = document.getElementById('gameId').value.trim();
     const championName = document.getElementById('championName').value.trim();
     const summonerName = document.getElementById('summonerName').value.trim();
 
-    if (!matchId) {
-        showError('Please enter a Match ID');
+    if (!region) {
+        showError('Please select a Region');
         return;
     }
+
+    if (!gameId) {
+        showError('Please enter a Game ID');
+        return;
+    }
+
+    // Combine region and game ID to create full match ID
+    const matchId = `${region}_${gameId}`;
 
     // Show loading
     document.getElementById('loading').classList.remove('hidden');
