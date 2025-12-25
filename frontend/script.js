@@ -285,7 +285,7 @@ function renderDeepDive(data) {
 
 // Allow Enter key to submit
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('matchId').addEventListener('keypress', (e) => {
+    document.getElementById('gameId').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             analyzeMatch();
         }
