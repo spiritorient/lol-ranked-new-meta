@@ -314,20 +314,77 @@ header p {
 
 .site-footer {
     text-align: center;
-    padding: 24px;
-    margin-top: 40px;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
+    padding: 32px 20px;
+    margin-top: 60px;
 }
 
-.site-footer a {
+.footer-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 24px;
+    padding: 12px 28px;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.footer-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: var(--text-secondary);
     text-decoration: none;
-    transition: color 0.2s;
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
-.site-footer a:hover {
+.footer-link .link-icon {
+    font-size: 0.7rem;
     color: var(--primary);
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.footer-link .link-text {
+    position: relative;
+}
+
+.footer-link .link-text::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--primary), transparent);
+    transition: width 0.3s ease;
+}
+
+.footer-link:hover {
+    color: var(--text);
+}
+
+.footer-link:hover .link-icon {
+    opacity: 1;
+    text-shadow: 0 0 8px var(--primary);
+    transform: scale(1.2);
+}
+
+.footer-link:hover .link-text::after {
+    width: 100%;
+}
+
+.footer-divider {
+    width: 1px;
+    height: 16px;
+    background: linear-gradient(180deg, transparent, var(--border), transparent);
 }
 
 @media (max-width: 768px) {
