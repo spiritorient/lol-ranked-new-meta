@@ -26,16 +26,14 @@
             background: var(--bg);
             color: var(--text);
             line-height: 1.8;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
         }
 
         .wrapper {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 30px;
-            align-items: start;
+            padding: 20px;
         }
 
         .container {
@@ -51,7 +49,6 @@
             margin-bottom: 50px;
             padding-bottom: 30px;
             border-bottom: 2px solid var(--border);
-            grid-column: 1 / -1;
         }
 
         .header h1 {
@@ -75,52 +72,126 @@
             font-size: 0.9rem;
         }
 
-        .nav {
-            position: sticky;
+        /* TOC Toggle Button */
+        .toc-toggle {
+            position: fixed;
             top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toc-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .toc-toggle.active {
+            background: var(--primary-dark);
+        }
+
+        /* TOC Overlay */
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
             background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            max-height: calc(100vh - 40px);
+            border-left: 1px solid var(--border);
+            z-index: 999;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
             overflow-y: auto;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-overlay.open {
+            transform: translateX(0);
+        }
+
+        .nav-overlay-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .nav-overlay-backdrop.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .nav {
+            padding: 80px 30px 30px;
         }
 
         .nav h3 {
             color: var(--primary);
-            margin-bottom: 15px;
-            font-size: 1.1rem;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
         }
 
         .nav ul {
             list-style: none;
         }
 
-        .nav li {
-            margin-bottom: 8px;
+        .nav > ul > li {
+            margin-bottom: 12px;
         }
 
         .nav a {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s;
+            font-size: 0.95rem;
+            transition: color 0.2s;
             display: block;
-            padding: 4px 0;
+            padding: 6px 0;
+            line-height: 1.5;
         }
 
         .nav a:hover {
             color: var(--primary);
+            padding-left: 5px;
+            transition: all 0.2s;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         .nav .level-2 {
-            padding-left: 15px;
+            padding-left: 20px;
             font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .nav .level-2 a {
+            padding: 4px 0;
         }
 
         .content {
             line-height: 1.8;
-            min-width: 0; /* Prevent grid overflow */
         }
 
         .content h1 {
@@ -250,60 +321,149 @@
             content: "← ";
         }
 
-        @media (max-width: 1024px) {
-            .wrapper {
-                grid-template-columns: 1fr;
-            }
-
-            .nav {
-                position: static;
-                max-height: none;
-                margin-bottom: 30px;
-            }
-
-            .header {
-                grid-column: 1;
-            }
-        }
-
         @media (max-width: 768px) {
-            body {
+            .wrapper {
                 padding: 10px;
             }
 
             .container {
                 padding: 20px;
+                border-radius: 8px;
+            }
+
+            .header {
+                margin-bottom: 30px;
+                padding-bottom: 20px;
             }
 
             .header h1 {
                 font-size: 1.8rem;
+                line-height: 1.3;
+            }
+
+            .header h2 {
+                font-size: 1.1rem;
+            }
+
+            .toc-toggle {
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+                top: 15px;
+                right: 15px;
+            }
+
+            .nav-overlay {
+                width: 85%;
+                max-width: 300px;
+            }
+
+            .nav {
+                padding: 70px 20px 20px;
+            }
+
+            .nav h3 {
+                font-size: 1.1rem;
+                margin-bottom: 15px;
+            }
+
+            .nav a {
+                font-size: 0.9rem;
             }
 
             .content h1 {
                 font-size: 1.6rem;
+                margin-top: 30px;
+                margin-bottom: 15px;
             }
 
             .content h2 {
                 font-size: 1.3rem;
+                margin-top: 25px;
+                margin-bottom: 12px;
+            }
+
+            .content h3 {
+                font-size: 1.1rem;
+                margin-top: 20px;
+                margin-bottom: 10px;
+            }
+
+            .content h4 {
+                font-size: 1rem;
+                margin-top: 15px;
+                margin-bottom: 8px;
+            }
+
+            .content p {
+                margin-bottom: 12px;
+                font-size: 0.95rem;
+            }
+
+            .content ul, .content ol {
+                margin-left: 20px;
+                margin-bottom: 15px;
+                font-size: 0.95rem;
+            }
+
+            .content pre {
+                padding: 15px;
+                font-size: 0.85rem;
+                overflow-x: auto;
+            }
+
+            .content code {
+                font-size: 0.85rem;
+                padding: 2px 4px;
+            }
+
+            .content table {
+                font-size: 0.9rem;
+                display: block;
+                overflow-x: auto;
+            }
+
+            .content table th,
+            .content table td {
+                padding: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .wrapper {
+                padding: 5px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .content h1 {
+                font-size: 1.4rem;
+            }
+
+            .content h2 {
+                font-size: 1.2rem;
+            }
+
+            .nav-overlay {
+                width: 90%;
             }
         }
     </style>
 </head>
 <body>
-    <div class="wrapper">
-        <div class="container">
-            <a href="/" class="back-link">Back to App</a>
-            
-            <div class="header">
-                <h1>League of Legends Match Advisor</h1>
-                <h2>AI-Powered Performance Analysis Platform</h2>
-                <div class="meta">
-                    <strong>Version 1.0</strong><br>
-                    <strong>December 2024</strong>
-                </div>
-            </div>
-        </div>
+    <button class="toc-toggle" id="tocToggle" aria-label="Toggle Table of Contents">
+        <span id="tocIcon">☰</span>
+    </button>
 
+    <div class="nav-overlay-backdrop" id="tocBackdrop"></div>
+    
+    <div class="nav-overlay" id="tocOverlay">
         <div class="nav">
             <h3>Table of Contents</h3>
             <ul>
@@ -339,8 +499,21 @@
                 <li><a href="#contributing">24. Contributing and Community</a></li>
             </ul>
         </div>
+    </div>
 
+    <div class="wrapper">
         <div class="container">
+            <a href="/" class="back-link">Back to App</a>
+            
+            <div class="header">
+                <h1>League of Legends Match Advisor</h1>
+                <h2>AI-Powered Performance Analysis Platform</h2>
+                <div class="meta">
+                    <strong>Version 1.0</strong><br>
+                    <strong>December 2024</strong>
+                </div>
+            </div>
+
             <div class="content" id="whitepaper-content">
                 <!-- Content will be loaded here -->
             </div>
@@ -445,6 +618,38 @@
             
             return html;
         }
+
+        // TOC Toggle functionality
+        const tocToggle = document.getElementById('tocToggle');
+        const tocOverlay = document.getElementById('tocOverlay');
+        const tocBackdrop = document.getElementById('tocBackdrop');
+        const tocIcon = document.getElementById('tocIcon');
+
+        function toggleTOC() {
+            const isOpen = tocOverlay.classList.toggle('open');
+            tocBackdrop.classList.toggle('open');
+            tocToggle.classList.toggle('active');
+            tocIcon.textContent = isOpen ? '✕' : '☰';
+        }
+
+        tocToggle.addEventListener('click', toggleTOC);
+        tocBackdrop.addEventListener('click', toggleTOC);
+
+        // Close TOC when clicking on a link (mobile)
+        document.querySelectorAll('.nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    toggleTOC();
+                }
+            });
+        });
+
+        // Close TOC on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && tocOverlay.classList.contains('open')) {
+                toggleTOC();
+            }
+        });
 
         // Load on page load
         loadWhitepaper();
