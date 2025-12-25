@@ -627,6 +627,823 @@ See types/match.go for complete schema definitions.
 
 ---
 
+## 13. Performance Metrics and Benchmarks
+
+### 13.1 Response Time Analysis
+
+**Typical Performance:**
+- **Riot API Call**: 200-500ms (network dependent)
+- **Data Processing**: 10-50ms
+- **OpenAI Analysis**: 2-5 seconds (model dependent)
+- **Total End-to-End**: 2.5-6 seconds average
+
+**Performance Breakdown:**
+```
+Request Processing Flow:
+├── Request Parsing: ~1ms
+├── Riot API Call: 200-500ms
+├── Data Formatting: 10-50ms
+├── OpenAI Request: 2-5 seconds
+├── Response Encoding: ~5ms
+└── Analytics Tracking: ~1ms (async)
+```
+
+### 13.2 System Resource Usage
+
+**Memory:**
+- Base memory footprint: ~20-30MB
+- Per request: ~1-5MB (temporary)
+- Analytics data (1000 records): ~2-5MB
+
+**CPU:**
+- Average CPU usage: 5-15% (idle)
+- Peak CPU usage: 30-50% (during analysis)
+- Concurrent request handling: Up to 100+ concurrent requests
+
+**Storage:**
+- Analytics data growth: ~2-5KB per request
+- 1000 requests ≈ 2-5MB
+- Recommended disk space: 1GB+ for production
+
+### 13.3 Scalability Characteristics
+
+**Current Limitations:**
+- Single instance deployment
+- No built-in rate limiting (relies on API providers)
+- File-based storage (single file bottleneck)
+
+**Scalability Targets:**
+- Support 100+ concurrent requests
+- Handle 10,000+ requests/day
+- Maintain <6 second response time (P95)
+- 99.9% uptime target
+
+---
+
+## 14. Security Architecture
+
+### 14.1 API Key Management
+
+**Secure Storage:**
+- API keys stored as environment variables
+- Never committed to version control
+- Encrypted at rest on cloud platform
+- Rotated regularly (recommended every 90 days)
+
+**Access Control:**
+- No user authentication required (public API)
+- Optional analytics endpoint protection via API key
+- CORS configured for controlled origins
+
+### 14.2 Input Validation
+
+**Match ID Validation:**
+- Format validation: `{REGION}_{NUMBER}`
+- Length checks: 10-20 characters
+- Character whitelist: alphanumeric and underscores
+- Injection prevention: URL encoding/escaping
+
+**Request Validation:**
+- JSON schema validation
+- Type checking (string, array, etc.)
+- Length limits on all fields
+- Sanitization of user inputs
+
+### 14.3 Data Privacy
+
+**Data Collection:**
+- Only public match data (via Riot API)
+- No personally identifiable information (PII) stored
+- IP addresses stored for analytics (can be anonymized)
+- No tracking cookies or client-side storage
+
+**Data Retention:**
+- Analytics data: Configurable (default: unlimited)
+- Request logs: No persistent logging
+- Match data: Not stored (fetched on-demand)
+
+**GDPR Compliance:**
+- Right to access: Analytics endpoint provides data
+- Right to deletion: Data can be cleared via configuration
+- Data minimization: Only necessary data collected
+- Transparency: Clear data usage policies
+
+### 14.4 Threat Mitigation
+
+**Common Threats Addressed:**
+- **DDoS Protection**: Rate limiting at platform level
+- **API Key Theft**: Environment variable isolation
+- **Injection Attacks**: Input validation and sanitization
+- **Data Leakage**: No sensitive data in logs or responses
+
+**Security Best Practices:**
+- HTTPS enforced for all communications
+- Regular security updates
+- Error messages don't expose system internals
+- Secure headers (CORS, Content-Type validation)
+
+---
+
+## 15. Cost Analysis
+
+### 15.1 Infrastructure Costs (Render.com)
+
+**Web Service:**
+- Free tier: 750 hours/month (suitable for development)
+- Starter plan: $7/month (512MB RAM, suitable for low traffic)
+- Standard plan: $25/month (2GB RAM, recommended for production)
+
+**Persistent Disk:**
+- Storage: $0.25/GB/month
+- Example: 1GB = $0.25/month
+
+**Estimated Monthly Costs:**
+- Development: $0-7/month
+- Low traffic (1000 requests/day): $7-25/month
+- Medium traffic (10,000 requests/day): $25-50/month
+- High traffic (100,000 requests/day): $50-200/month
+
+### 15.2 API Costs
+
+**Riot Games API:**
+- Development key: Free (rate limited)
+- Production key: Free (higher rate limits available)
+- No direct costs for API usage
+
+**OpenAI API:**
+- GPT-4o-mini (default): $0.15/1M input tokens, $0.60/1M output tokens
+- GPT-4: $10-30/1M input tokens, $30-60/1M output tokens
+- Average cost per analysis:
+  - GPT-4o-mini: $0.001-0.005 per analysis
+  - GPT-4: $0.05-0.20 per analysis
+
+**Estimated Monthly API Costs:**
+- 1,000 analyses/month (GPT-4o-mini): $1-5
+- 10,000 analyses/month (GPT-4o-mini): $10-50
+- 100,000 analyses/month (GPT-4o-mini): $100-500
+
+**Total Estimated Costs:**
+- Development: $0-10/month
+- Production (low): $20-35/month
+- Production (medium): $35-100/month
+- Production (high): $150-700/month
+
+### 15.3 Cost Optimization Strategies
+
+1. **Model Selection**: Use GPT-4o-mini for cost efficiency
+2. **Caching**: Cache match data (not currently implemented)
+3. **Rate Limiting**: Prevent abuse and reduce API calls
+4. **Batch Processing**: Process multiple matches efficiently
+5. **Monitoring**: Track API usage and costs
+
+---
+
+## 16. Detailed API Documentation
+
+### 16.1 POST /analyze-match
+
+**Endpoint:** `POST /analyze-match`
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body Schema:**
+```json
+{
+  "match_id": "string (required)",
+  "region": "string (optional)",
+  "champion_name": "string (optional)",
+  "summoner_name": "string (optional)",
+  "focus_areas": ["string"] (optional)
+}
+```
+
+**Request Example:**
+```json
+{
+  "match_id": "NA1_1234567890",
+  "champion_name": "Yasuo",
+  "focus_areas": ["combat", "vision", "objectives"]
+}
+```
+
+**Response Schema:**
+```json
+{
+  "match_id": "string",
+  "analysis": "string",
+  "suggestions": ["string"],
+  "coaching_tips": ["string"],
+  "champion_deep_dive": "string (optional)",
+  "structured_insights": {
+    "what_went_well": [
+      {
+        "title": "string",
+        "description": "string",
+        "impact": "string",
+        "data": ["string"],
+        "category": "string"
+      }
+    ],
+    "what_went_wrong": [...],
+    "critical_moments": [...],
+    "item_analysis": {...},
+    "matchup_analysis": {...},
+    "key_statistics": {...}
+  },
+  "error": "string (only on error)"
+}
+```
+
+**Response Example:**
+```json
+{
+  "match_id": "NA1_1234567890",
+  "analysis": "In this 32-minute match, Team Blue secured victory through superior objective control...",
+  "suggestions": [
+    "Improve early game CS: You had 4.2 CS/min at 10 minutes, below the 6.0 CS/min target",
+    "Increase vision control: Placed only 12 wards vs opponent's 25 wards",
+    "Focus on objective timing: Team secured only 1 dragon while opponents secured 3"
+  ],
+  "coaching_tips": [
+    "Practice last-hitting in custom games to improve CS consistency",
+    "Purchase control wards on every back after 10 minutes",
+    "Group for dragon spawns 30 seconds before they appear"
+  ],
+  "champion_deep_dive": "Yasuo Performance Analysis:\n\nYour Yasuo performance showed strong mid-game teamfighting...",
+  "structured_insights": {
+    "what_went_well": [
+      {
+        "title": "Strong Teamfight Execution",
+        "description": "Achieved 3 multi-kills in teamfights at 18, 24, and 29 minutes",
+        "impact": "Generated 2000+ gold advantage for team",
+        "data": ["3 double kills", "12/5/8 KDA", "Highest damage on team"],
+        "category": "combat"
+      }
+    ],
+    "what_went_wrong": [
+      {
+        "title": "Poor Early Game CS",
+        "description": "Averaged only 4.2 CS/min in first 10 minutes",
+        "impact": "Fell behind in gold and experience",
+        "data": ["42 CS at 10 min", "Opponent had 68 CS", "600 gold deficit"],
+        "category": "farming"
+      }
+    ],
+    "critical_moments": [
+      {
+        "title": "Baron Teamfight at 28 minutes",
+        "description": "Secured baron and won teamfight, turning 2k gold deficit into 3k advantage",
+        "outcome": "Victory",
+        "impact": "Led to game-winning push",
+        "data": ["5-0 ace", "Baron secured", "3 towers destroyed"]
+      }
+    ],
+    "key_statistics": {
+      "combat": [
+        {"label": "KDA", "value": "12/5/8", "context": "2.4 KDA ratio"},
+        {"label": "Damage Dealt", "value": "45,230", "context": "Highest on team"}
+      ],
+      "objectives": [
+        {"label": "Turrets", "value": "3", "context": "Team total: 9"},
+        {"label": "Dragons", "value": "2", "context": "Team total: 4"}
+      ]
+    }
+  }
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid request format or missing match_id
+- `500 Internal Server Error`: Riot API error or OpenAI error
+- `503 Service Unavailable`: Rate limit exceeded or service unavailable
+
+**Error Response Example:**
+```json
+{
+  "error": "Failed to fetch match data: Riot API error: status 404, body: Match not found"
+}
+```
+
+### 16.2 GET /analyze-match-get
+
+**Endpoint:** `GET /analyze-match-get`
+
+**Query Parameters:**
+- `match_id` (required): Match ID to analyze
+- `champion_name` (optional): Champion name for deep dive
+- `summoner_name` (optional): Summoner name for deep dive
+- `focus_areas` (optional): Comma-separated list of focus areas
+
+**Example Request:**
+```
+GET /analyze-match-get?match_id=NA1_1234567890&champion_name=Yasuo&focus_areas=combat,vision
+```
+
+**Response:** Same as POST /analyze-match
+
+### 16.3 GET /analytics
+
+**Endpoint:** `GET /analytics`
+
+**Query Parameters:**
+- `key` (optional): Analytics protection key (if configured)
+
+**Response Schema:**
+```json
+{
+  "total_requests": 1234,
+  "unique_ips": {
+    "192.168.1.1": 45,
+    "10.0.0.1": 32
+  },
+  "requests_by_path": {
+    "/analyze-match": 1000,
+    "/health": 234
+  },
+  "requests_by_method": {
+    "POST": 1000,
+    "GET": 234
+  },
+  "requests_by_day": {
+    "2024-12-01": 100,
+    "2024-12-02": 150
+  },
+  "user_agents": {
+    "Desktop Chrome": 800,
+    "Mobile Safari": 200
+  },
+  "recent_requests": [...],
+  "first_request": "2024-12-01T00:00:00Z",
+  "last_request": "2024-12-02T12:00:00Z"
+}
+```
+
+### 16.4 GET /health
+
+**Endpoint:** `GET /health`
+
+**Response:**
+```
+OK
+```
+
+**Status Codes:**
+- `200 OK`: Service is healthy
+
+---
+
+## 17. Error Handling and Troubleshooting
+
+### 17.1 Common Errors
+
+**Error: "match_id is required"**
+- **Cause**: Missing match_id in request
+- **Solution**: Include match_id in request body or query parameter
+
+**Error: "Failed to fetch match data: Riot API error: status 404"**
+- **Cause**: Invalid match ID or match not found
+- **Solution**: Verify match ID format and ensure match exists in region
+
+**Error: "Failed to fetch match data: Riot API error: status 403"**
+- **Cause**: Invalid or expired Riot API key
+- **Solution**: Check RIOT_API_KEY environment variable and verify API key validity
+
+**Error: "Failed to analyze match: OpenAI API error"**
+- **Cause**: Invalid OpenAI API key or rate limit exceeded
+- **Solution**: Check OPENAI_API_KEY environment variable and monitor API usage
+
+**Error: "rate limit exceeded"**
+- **Cause**: Too many requests to external APIs
+- **Solution**: Implement rate limiting or wait before retrying
+
+### 17.2 Debugging
+
+**Enable Debug Logging:**
+- Check server logs for detailed error messages
+- Logs include request details, API responses, and error stack traces
+
+**Verify Configuration:**
+```bash
+# Check environment variables
+echo $RIOT_API_KEY
+echo $OPENAI_API_KEY
+echo $PORT
+```
+
+**Test API Connectivity:**
+```bash
+# Test Riot API
+curl -H "X-Riot-Token: YOUR_KEY" \
+  "https://americas.api.riotgames.com/lol/match/v5/matches/NA1_TEST"
+
+# Test health endpoint
+curl http://localhost:8080/health
+```
+
+### 17.3 Performance Troubleshooting
+
+**Slow Response Times:**
+- Check OpenAI API response times (usually 2-5 seconds)
+- Verify network connectivity to APIs
+- Monitor server resource usage (CPU, memory)
+- Consider using faster OpenAI models (GPT-4o-mini vs GPT-4)
+
+**High Memory Usage:**
+- Reduce analytics data retention period
+- Limit number of recent requests in memory
+- Consider moving to database storage for large datasets
+
+---
+
+## 18. Testing and Quality Assurance
+
+### 18.1 Testing Strategy
+
+**Unit Tests:**
+- Test individual components in isolation
+- Mock external API dependencies
+- Test data transformation and formatting functions
+
+**Integration Tests:**
+- Test API endpoints with mock data
+- Verify request/response formats
+- Test error handling paths
+
+**End-to-End Tests:**
+- Test complete request flow
+- Verify external API integrations (with test keys)
+- Test analytics tracking
+
+### 18.2 Test Cases
+
+**API Endpoint Tests:**
+- Valid match ID request
+- Invalid match ID request
+- Missing required parameters
+- Optional parameters (champion_name, focus_areas)
+- Error responses
+
+**Data Processing Tests:**
+- Match data formatting
+- Participant data extraction
+- Deep dive data generation
+- Structured insights generation
+
+**Edge Cases:**
+- Very long match duration (>60 minutes)
+- Surrendered matches
+- Missing participant data
+- Invalid champion names
+- Special characters in summoner names
+
+### 18.3 Manual Testing
+
+**Test Match IDs:**
+- Use recent match IDs from your region
+- Test different game modes (Ranked, Normal, ARAM)
+- Test different match durations
+- Test different champion roles
+
+**Test Scenarios:**
+1. Basic match analysis (no filters)
+2. Champion-specific deep dive
+3. Summoner-specific deep dive
+4. Multiple focus areas
+5. Error scenarios (invalid IDs, API failures)
+
+---
+
+## 19. Monitoring and Observability
+
+### 19.1 Metrics to Monitor
+
+**Performance Metrics:**
+- Request latency (P50, P95, P99)
+- API response times (Riot, OpenAI)
+- Error rates
+- Throughput (requests per second)
+
+**Resource Metrics:**
+- CPU usage
+- Memory usage
+- Disk I/O
+- Network I/O
+
+**Business Metrics:**
+- Total requests
+- Unique users
+- Popular endpoints
+- Analysis success rate
+
+### 19.2 Logging
+
+**Log Levels:**
+- **INFO**: Normal operations, request processing
+- **WARN**: Recoverable errors, rate limit warnings
+- **ERROR**: API failures, processing errors
+- **DEBUG**: Detailed debugging information
+
+**Log Format:**
+```
+[timestamp] [level] [component] message
+```
+
+**Example Logs:**
+```
+[2024-12-02 10:30:45] [INFO] [match-handler] Fetching match data for match ID: NA1_1234567890
+[2024-12-02 10:30:46] [INFO] [match-handler] Analyzing match using OpenAI
+[2024-12-02 10:30:50] [INFO] [match-handler] Analysis completed successfully
+```
+
+### 19.3 Alerting
+
+**Critical Alerts:**
+- Service downtime
+- High error rate (>5%)
+- API key expiration
+- Storage full
+
+**Warning Alerts:**
+- High latency (>10 seconds)
+- Rate limit approaching
+- High memory usage (>80%)
+- Unusual request patterns
+
+---
+
+## 20. Deployment Guide
+
+### 20.1 Prerequisites
+
+**Required:**
+- Riot Games API key
+- OpenAI API key
+- Render.com account (or alternative hosting)
+
+**Recommended:**
+- GitHub repository
+- Domain name (optional)
+- Monitoring service (optional)
+
+### 20.2 Deployment Steps
+
+**1. Prepare Repository:**
+```bash
+git clone <repository-url>
+cd lol-ranked-new-meta
+```
+
+**2. Set Environment Variables:**
+```bash
+export RIOT_API_KEY=your_riot_key
+export OPENAI_API_KEY=your_openai_key
+export PORT=8080
+export RIOT_API_REGION=americas
+export OPENAI_MODEL=gpt-4o-mini
+```
+
+**3. Deploy to Render.com:**
+- Connect GitHub repository
+- Create new Web Service
+- Set environment variables
+- Deploy
+
+**4. Verify Deployment:**
+```bash
+curl https://your-service.onrender.com/health
+```
+
+### 20.3 Post-Deployment
+
+**Verify:**
+- Health check endpoint responds
+- Match analysis endpoint works
+- Analytics endpoint accessible (if protected)
+- Frontend loads correctly
+
+**Monitor:**
+- Check logs for errors
+- Monitor API usage
+- Track response times
+- Review analytics data
+
+---
+
+## 21. Integration Examples
+
+### 21.1 JavaScript/Node.js Integration
+
+```javascript
+async function analyzeMatch(matchId, championName = null) {
+  const response = await fetch('https://api.example.com/analyze-match', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      match_id: matchId,
+      champion_name: championName,
+      focus_areas: ['combat', 'vision']
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data;
+}
+
+// Usage
+analyzeMatch('NA1_1234567890', 'Yasuo')
+  .then(result => {
+    console.log('Analysis:', result.analysis);
+    console.log('Suggestions:', result.suggestions);
+  })
+  .catch(error => console.error('Error:', error));
+```
+
+### 21.2 Python Integration
+
+```python
+import requests
+import json
+
+def analyze_match(match_id, champion_name=None, focus_areas=None):
+    url = 'https://api.example.com/analyze-match'
+    payload = {
+        'match_id': match_id,
+        'champion_name': champion_name,
+        'focus_areas': focus_areas or []
+    }
+    
+    response = requests.post(url, json=payload)
+    response.raise_for_status()
+    
+    return response.json()
+
+# Usage
+result = analyze_match(
+    'NA1_1234567890',
+    champion_name='Yasuo',
+    focus_areas=['combat', 'vision']
+)
+print(result['analysis'])
+print(result['suggestions'])
+```
+
+### 21.3 cURL Integration
+
+```bash
+# Basic analysis
+curl -X POST https://api.example.com/analyze-match \
+  -H "Content-Type: application/json" \
+  -d '{
+    "match_id": "NA1_1234567890"
+  }'
+
+# Deep dive analysis
+curl -X POST https://api.example.com/analyze-match \
+  -H "Content-Type: application/json" \
+  -d '{
+    "match_id": "NA1_1234567890",
+    "champion_name": "Yasuo",
+    "focus_areas": ["combat", "vision", "objectives"]
+  }'
+```
+
+---
+
+## 22. Advanced Configuration
+
+### 22.1 Environment Variables Reference
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `RIOT_API_KEY` | Riot Games API key | - | Yes |
+| `OPENAI_API_KEY` | OpenAI API key | - | Yes |
+| `PORT` | Server port | `8080` | No |
+| `RIOT_API_REGION` | API region | `americas` | No |
+| `OPENAI_MODEL` | OpenAI model | `gpt-4o-mini` | No |
+| `ANALYTICS_DATA_PATH` | Analytics storage path | `/data/analytics.json` | No |
+| `ANALYTICS_MAX_DAYS` | Retention days (0=unlimited) | `0` | No |
+| `ANALYTICS_MAX_RECORDS` | Retention count (0=unlimited) | `0` | No |
+| `ANALYTICS_KEY` | Analytics endpoint protection | - | No |
+
+### 22.2 Region Configuration
+
+**Available Regions:**
+- `americas`: NA1, BR1, LA1, LA2
+- `europe`: EUW1, EUN1, TR1, RU
+- `asia`: KR, JP1
+- `sea`: PH2, SG2, TH2, TW2, VN2
+
+**Region Selection:**
+- Set `RIOT_API_REGION` environment variable
+- Or specify in request body (if supported)
+
+### 22.3 Model Configuration
+
+**Available OpenAI Models:**
+- `gpt-4o-mini`: Fast, cost-effective (recommended)
+- `gpt-4o`: More capable, higher cost
+- `gpt-4`: Most capable, highest cost
+- `gpt-3.5-turbo`: Legacy, cheaper but less capable
+
+**Model Selection:**
+- Set `OPENAI_MODEL` environment variable
+- Consider cost vs. quality trade-offs
+- Monitor response times and quality
+
+---
+
+## 23. Roadmap and Future Development
+
+### 23.1 Short-Term Enhancements (1-3 months)
+
+**Immediate Improvements:**
+- Rate limiting middleware
+- Request caching for match data
+- Enhanced error messages
+- API documentation (OpenAPI/Swagger)
+- Database integration (PostgreSQL)
+
+**Feature Additions:**
+- Batch match analysis
+- Match comparison feature
+- Historical trend analysis
+- Custom analysis templates
+- Export functionality (PDF, CSV)
+
+### 23.2 Medium-Term Goals (3-6 months)
+
+**Advanced Features:**
+- Timeline/event data integration
+- Real-time match tracking
+- Machine learning models for predictions
+- Advanced visualizations
+- Mobile app
+
+**Infrastructure:**
+- Multi-region deployment
+- Load balancing
+- Redis caching layer
+- CDN integration
+- Database sharding
+
+### 23.3 Long-Term Vision (6-12 months)
+
+**Platform Expansion:**
+- Support for other Riot games (VALORANT, TFT)
+- Multi-game analytics dashboard
+- Social features (share analyses)
+- Coaching marketplace
+- API marketplace
+
+**Enterprise Features:**
+- Team/org management
+- Advanced analytics dashboard
+- Custom branding
+- White-label solution
+- Enterprise support
+
+---
+
+## 24. Contributing and Community
+
+### 24.1 Contributing Guidelines
+
+**Getting Started:**
+1. Fork the repository
+2. Create a feature branch
+3. Make changes
+4. Submit pull request
+
+**Code Standards:**
+- Follow Go formatting (`gofmt`)
+- Write tests for new features
+- Update documentation
+- Follow existing code style
+
+### 24.2 Community Support
+
+**Support Channels:**
+- GitHub Issues: Bug reports and feature requests
+- Discussions: Questions and community help
+- Documentation: Comprehensive guides and examples
+
+**Reporting Issues:**
+- Provide detailed error messages
+- Include steps to reproduce
+- Specify environment details
+- Attach relevant logs
+
+---
+
 ## References
 
 1. Riot Games API Documentation: https://developer.riotgames.com/

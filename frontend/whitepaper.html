@@ -29,9 +29,16 @@
             padding: 20px;
         }
 
-        .container {
-            max-width: 900px;
+        .wrapper {
+            max-width: 1400px;
             margin: 0 auto;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .container {
             background: var(--bg-secondary);
             border-radius: 12px;
             border: 1px solid var(--border);
@@ -44,6 +51,7 @@
             margin-bottom: 50px;
             padding-bottom: 30px;
             border-bottom: 2px solid var(--border);
+            grid-column: 1 / -1;
         }
 
         .header h1 {
@@ -70,12 +78,11 @@
         .nav {
             position: sticky;
             top: 20px;
-            background: var(--bg);
+            background: var(--bg-secondary);
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 20px;
-            margin-bottom: 30px;
-            max-height: 80vh;
+            max-height: calc(100vh - 40px);
             overflow-y: auto;
         }
 
@@ -113,6 +120,7 @@
 
         .content {
             line-height: 1.8;
+            min-width: 0; /* Prevent grid overflow */
         }
 
         .content h1 {
@@ -242,7 +250,27 @@
             content: "← ";
         }
 
+        @media (max-width: 1024px) {
+            .wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .nav {
+                position: static;
+                max-height: none;
+                margin-bottom: 30px;
+            }
+
+            .header {
+                grid-column: 1;
+            }
+        }
+
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
             .container {
                 padding: 20px;
             }
@@ -262,15 +290,17 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <a href="/" class="back-link">Back to App</a>
-        
-        <div class="header">
-            <h1>League of Legends Match Advisor</h1>
-            <h2>AI-Powered Performance Analysis Platform</h2>
-            <div class="meta">
-                <strong>Version 1.0</strong><br>
-                <strong>December 2024</strong>
+    <div class="wrapper">
+        <div class="container">
+            <a href="/" class="back-link">Back to App</a>
+            
+            <div class="header">
+                <h1>League of Legends Match Advisor</h1>
+                <h2>AI-Powered Performance Analysis Platform</h2>
+                <div class="meta">
+                    <strong>Version 1.0</strong><br>
+                    <strong>December 2024</strong>
+                </div>
             </div>
         </div>
 
@@ -295,11 +325,25 @@
                 <li><a href="#specifications">10. Technical Specifications</a></li>
                 <li><a href="#privacy">11. Data Privacy and Ethics</a></li>
                 <li><a href="#conclusion">12. Conclusion</a></li>
+                <li><a href="#performance-metrics">13. Performance Metrics and Benchmarks</a></li>
+                <li><a href="#security-architecture">14. Security Architecture</a></li>
+                <li><a href="#cost-analysis">15. Cost Analysis</a></li>
+                <li><a href="#detailed-api">16. Detailed API Documentation</a></li>
+                <li><a href="#error-handling">17. Error Handling and Troubleshooting</a></li>
+                <li><a href="#testing">18. Testing and Quality Assurance</a></li>
+                <li><a href="#monitoring">19. Monitoring and Observability</a></li>
+                <li><a href="#deployment-guide">20. Deployment Guide</a></li>
+                <li><a href="#integration">21. Integration Examples</a></li>
+                <li><a href="#advanced-config">22. Advanced Configuration</a></li>
+                <li><a href="#roadmap">23. Roadmap and Future Development</a></li>
+                <li><a href="#contributing">24. Contributing and Community</a></li>
             </ul>
         </div>
 
-        <div class="content" id="whitepaper-content">
-            <!-- Content will be loaded here -->
+        <div class="container">
+            <div class="content" id="whitepaper-content">
+                <!-- Content will be loaded here -->
+            </div>
         </div>
     </div>
 
