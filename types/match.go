@@ -2,10 +2,11 @@ package types
 
 // MatchRequest represents the incoming request for match analysis
 type MatchRequest struct {
-	MatchID       string `json:"match_id"`
-	Region        string `json:"region,omitempty"`        // Optional: overrides default region
-	ChampionName  string `json:"champion_name,omitempty"` // Optional: for deep dive analysis on specific champion
-	SummonerName  string `json:"summoner_name,omitempty"` // Optional: for deep dive analysis on specific summoner
+	MatchID       string   `json:"match_id"`
+	Region        string   `json:"region,omitempty"`        // Optional: overrides default region
+	ChampionName  string   `json:"champion_name,omitempty"` // Optional: for deep dive analysis on specific champion
+	SummonerName  string   `json:"summoner_name,omitempty"` // Optional: for deep dive analysis on specific summoner
+	FocusAreas    []string `json:"focus_areas,omitempty"`   // Optional: which data aspects to analyze deeply (combat, vision, objectives, items, matchup, economy, farming)
 }
 
 // MatchResponse represents the response from the match advisor

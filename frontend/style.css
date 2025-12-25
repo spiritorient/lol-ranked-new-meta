@@ -347,6 +347,108 @@ header p {
     display: none;
 }
 
+.focus-selector {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.95rem;
+}
+
+.radio-label:hover {
+    border-color: var(--primary);
+    background: var(--bg-secondary);
+}
+
+.radio-label input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+}
+
+.radio-label input[type="radio"]:checked + span {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+
+.checkbox-label:hover {
+    border-color: var(--primary);
+    background: var(--bg-secondary);
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.checkbox-label input[type="checkbox"]:checked + span {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.help-text {
+    margin-top: 12px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.info-message {
+    background: rgba(62, 180, 201, 0.1);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    color: var(--text);
+}
+
+.info-message p {
+    margin-bottom: 10px;
+}
+
+.info-message p:last-child {
+    margin-bottom: 0;
+}
+
+.info-message ul,
+.info-message ol {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
 .deep-dive-content {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -372,6 +474,18 @@ header p {
     
     .tab-btn {
         width: 100%;
+    }
+    
+    .focus-selector {
+        flex-direction: column;
+    }
+    
+    .radio-label {
+        width: 100%;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: 1fr;
     }
 }
 

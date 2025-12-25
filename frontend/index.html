@@ -38,13 +38,59 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="championName">Champion Name (Optional)</label>
-                <input type="text" id="championName" placeholder="Nautilus">
+                <label>Focus Analysis On (Optional - for deep dive)</label>
+                <div class="focus-selector">
+                    <label class="radio-label">
+                        <input type="radio" name="focusType" value="none" checked>
+                        <span>General Match Analysis</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="focusType" value="champion">
+                        <span>Specific Champion</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="focusType" value="summoner">
+                        <span>Specific Player</span>
+                    </label>
+                </div>
+                <input type="text" id="focusValue" placeholder="Enter champion or player name" class="hidden">
             </div>
-            <div class="form-group">
-                <label for="summonerName">Summoner Name (Optional)</label>
-                <input type="text" id="summonerName" placeholder="PlayerName">
+            
+            <div class="form-group" id="focusAreasGroup" style="display: none;">
+                <label>Select Data to Analyze Deeply (Optional)</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="focusAreas" value="combat">
+                        <span>⚔️ Combat Stats</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="focusAreas" value="vision">
+                        <span>👁️ Vision Control</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="focusAreas" value="objectives">
+                        <span>🏆 Objectives</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="focusAreas" value="items">
+                        <span>🛡️ Item Build</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="focusAreas" value="matchup">
+                        <span>⚔️ Matchup & Team Comp</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="focusAreas" value="economy">
+                        <span>💰 Economy</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="focusAreas" value="farming">
+                        <span>🌾 Farming</span>
+                    </label>
+                </div>
+                <p class="help-text">💡 Tip: Select specific areas to get more detailed analysis on those aspects</p>
             </div>
+            
             <button id="analyzeBtn" onclick="analyzeMatch()">Analyze Match</button>
         </div>
 

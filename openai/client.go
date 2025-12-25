@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
 	"lol-ranked-new-meta/types"
@@ -24,7 +25,8 @@ func NewClient(apiKey, model string) *Client {
 
 // AnalyzeMatch analyzes a League of Legends match and provides coaching advice
 // championFilter and summonerFilter are optional - if provided, will generate a deep dive analysis
-func (c *Client) AnalyzeMatch(ctx context.Context, matchSummary string, championFilter, summonerFilter string) (*types.MatchResponse, error) {
+// focusAreas specifies which data aspects to analyze deeply (combat, vision, objectives, items, matchup, economy, farming)
+func (c *Client) AnalyzeMatch(ctx context.Context, matchSummary string, championFilter, summonerFilter string, focusAreas []string) (*types.MatchResponse, error) {
 	// Define the function schema for structured output
 	analyzeMatchFunction := openai.FunctionDefinition{
 		Name:        "analyze_match",
@@ -67,12 +69,17 @@ Your analysis must:
 
 Avoid generic advice. Instead, cite specific stats like "Team secured 3 dragons at 15, 22, and 28 minutes" or "ADC had 300 CS at 30 minutes vs opponent's 250".`
 
+	focusAreasNote := ""
+	if len(focusAreas) > 0 {
+		focusAreasNote = fmt.Sprintf("\n\nSPECIAL FOCUS: Pay extra attention to these aspects: %s", strings.Join(focusAreas, ", "))
+	}
+
 	userPrompt := fmt.Sprintf(`Analyze this EXACT League of Legends match using the specific data provided:
 
-%s
+%s%s
 
 Provide analysis that references SPECIFIC NUMBERS, EVENTS, and STATS from this match. 
-Focus on what actually happened, not generic coaching advice.`, matchSummary)
+Focus on what actually happened, not generic coaching advice.`, matchSummary, focusAreasNote)
 
 	// Create the chat completion request with function calling
 	req := openai.ChatCompletionRequest{
@@ -140,7 +147,7 @@ Focus on what actually happened, not generic coaching advice.`, matchSummary)
 
 		// If champion/summoner filter is specified, generate deep dive analysis and structured insights
 		if championFilter != "" || summonerFilter != "" {
-			deepDive, err := c.AnalyzeChampionDeepDive(ctx, matchSummary, championFilter, summonerFilter)
+			deepDive, err := c.AnalyzeChampionDeepDive(ctx, matchSummary, championFilter, summonerFilter, focusAreas)
 			if err != nil {
 				// Log error but don't fail the whole request
 				response.ChampionDeepDive = "Failed to generate deep dive analysis: " + err.Error()
@@ -149,7 +156,7 @@ Focus on what actually happened, not generic coaching advice.`, matchSummary)
 			}
 			
 			// Generate structured insights for interactive frontend
-			structuredInsights, err := c.GenerateStructuredInsights(ctx, matchSummary, championFilter, summonerFilter)
+			structuredInsights, err := c.GenerateStructuredInsights(ctx, matchSummary, championFilter, summonerFilter, focusAreas)
 			if err == nil {
 				response.StructuredInsights = structuredInsights
 			}
@@ -163,7 +170,7 @@ Focus on what actually happened, not generic coaching advice.`, matchSummary)
 
 	// If champion/summoner filter is specified, generate deep dive analysis and structured insights
 	if championFilter != "" || summonerFilter != "" {
-		deepDive, err := c.AnalyzeChampionDeepDive(ctx, matchSummary, championFilter, summonerFilter)
+		deepDive, err := c.AnalyzeChampionDeepDive(ctx, matchSummary, championFilter, summonerFilter, focusAreas)
 		if err != nil {
 			// Log error but don't fail the whole request
 			response.ChampionDeepDive = "Failed to generate deep dive analysis: " + err.Error()
@@ -172,7 +179,7 @@ Focus on what actually happened, not generic coaching advice.`, matchSummary)
 		}
 		
 		// Generate structured insights for interactive frontend
-		structuredInsights, err := c.GenerateStructuredInsights(ctx, matchSummary, championFilter, summonerFilter)
+		structuredInsights, err := c.GenerateStructuredInsights(ctx, matchSummary, championFilter, summonerFilter, focusAreas)
 		if err == nil {
 			response.StructuredInsights = structuredInsights
 		}
@@ -182,7 +189,7 @@ Focus on what actually happened, not generic coaching advice.`, matchSummary)
 }
 
 // AnalyzeChampionDeepDive provides a detailed analysis focused on a specific champion
-func (c *Client) AnalyzeChampionDeepDive(ctx context.Context, matchSummary, championFilter, summonerFilter string) (string, error) {
+func (c *Client) AnalyzeChampionDeepDive(ctx context.Context, matchSummary, championFilter, summonerFilter string, focusAreas []string) (string, error) {
 	targetName := championFilter
 	if summonerFilter != "" {
 		targetName = summonerFilter
@@ -201,10 +208,15 @@ Your analysis must:
 
 Avoid generic advice like "ward more" - instead say "placed only X wards compared to opponent's Y" with specific impact.`
 
+	focusAreasNote := ""
+	if len(focusAreas) > 0 {
+		focusAreasNote = fmt.Sprintf("\n\nSPECIAL FOCUS: Pay extra attention to these aspects: %s", strings.Join(focusAreas, ", "))
+	}
+
 	userPrompt := fmt.Sprintf(`Analyze the performance of %s in this EXACT match. Use the actual data provided.
 
 MATCH DATA:
-%s
+%s%s
 
 Provide analysis focusing on SPECIFIC EVENTS AND NUMBERS from this match:
 1. What went well - cite specific stats (e.g., "Achieved 8.5 CS/min at 15 minutes, above average")
@@ -212,7 +224,7 @@ Provide analysis focusing on SPECIFIC EVENTS AND NUMBERS from this match:
 3. Critical moments - identify specific game-changing events using the data
 4. Item build analysis - evaluate items purchased in context of actual opponent champions
 5. Matchup performance - compare actual stats vs lane opponent (provided in data)
-6. Specific, actionable improvements based on this exact match's data`, targetName, matchSummary)
+6. Specific, actionable improvements based on this exact match's data`, targetName, matchSummary, focusAreasNote)
 
 	req := openai.ChatCompletionRequest{
 		Model: c.model,
@@ -242,7 +254,7 @@ Provide analysis focusing on SPECIFIC EVENTS AND NUMBERS from this match:
 }
 
 // GenerateStructuredInsights creates structured, data-driven insights for interactive frontend
-func (c *Client) GenerateStructuredInsights(ctx context.Context, matchSummary, championFilter, summonerFilter string) (*types.StructuredInsights, error) {
+func (c *Client) GenerateStructuredInsights(ctx context.Context, matchSummary, championFilter, summonerFilter string, focusAreas []string) (*types.StructuredInsights, error) {
 	targetName := championFilter
 	if summonerFilter != "" {
 		targetName = summonerFilter
@@ -321,16 +333,21 @@ func (c *Client) GenerateStructuredInsights(ctx context.Context, matchSummary, c
 CRITICAL: Only reference specific numbers, stats, and events from the provided match data.
 Each insight must cite actual data (e.g., "Died 3 times before 10 minutes" not "died early").`
 
+	focusAreasNote := ""
+	if len(focusAreas) > 0 {
+		focusAreasNote = fmt.Sprintf("\n\nSPECIAL FOCUS: Pay extra attention to these aspects: %s", strings.Join(focusAreas, ", "))
+	}
+
 	userPrompt := fmt.Sprintf(`Generate structured insights for %s in this match. Use ONLY the actual data provided:
 
-%s
+%s%s
 
 Return structured data with:
 1. What went well - specific achievements with numbers
 2. What went wrong - specific failures with supporting data
 3. Critical moments - game-changing events with context
 4. Item analysis - evaluate items vs actual opponent champions
-5. Matchup analysis - compare actual performance vs lane opponent`, targetName, matchSummary)
+5. Matchup analysis - compare actual performance vs lane opponent`, targetName, matchSummary, focusAreasNote)
 
 	req := openai.ChatCompletionRequest{
 		Model: c.model,

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	"lol-ranked-new-meta/openai"
 	"lol-ranked-new-meta/riot"
@@ -66,7 +67,10 @@ func (h *MatchHandler) HandleAnalyzeMatch(w http.ResponseWriter, r *http.Request
 	} else if req.SummonerName != "" {
 		log.Printf("Deep dive requested for summoner: %s", req.SummonerName)
 	}
-	analysis, err := h.openaiClient.AnalyzeMatch(r.Context(), matchSummary, req.ChampionName, req.SummonerName)
+	if len(req.FocusAreas) > 0 {
+		log.Printf("Focus areas requested: %v", req.FocusAreas)
+	}
+	analysis, err := h.openaiClient.AnalyzeMatch(r.Context(), matchSummary, req.ChampionName, req.SummonerName, req.FocusAreas)
 	if err != nil {
 		log.Printf("Error analyzing match: %v", err)
 		h.sendError(w, "Failed to analyze match: "+err.Error(), http.StatusInternalServerError)
@@ -103,6 +107,15 @@ func (h *MatchHandler) HandleAnalyzeMatchGET(w http.ResponseWriter, r *http.Requ
 	// Get optional champion/summoner filter from query params
 	championFilter := r.URL.Query().Get("champion_name")
 	summonerFilter := r.URL.Query().Get("summoner_name")
+	
+	// Get optional focus areas from query params (comma-separated)
+	var focusAreas []string
+	if focusAreasStr := r.URL.Query().Get("focus_areas"); focusAreasStr != "" {
+		focusAreas = strings.Split(focusAreasStr, ",")
+		for i := range focusAreas {
+			focusAreas[i] = strings.TrimSpace(focusAreas[i])
+		}
+	}
 
 	// Fetch match data from Riot API
 	log.Printf("Fetching match data for match ID: %s", matchID)
@@ -123,7 +136,10 @@ func (h *MatchHandler) HandleAnalyzeMatchGET(w http.ResponseWriter, r *http.Requ
 	} else if summonerFilter != "" {
 		log.Printf("Deep dive requested for summoner: %s", summonerFilter)
 	}
-	analysis, err := h.openaiClient.AnalyzeMatch(r.Context(), matchSummary, championFilter, summonerFilter)
+	if len(focusAreas) > 0 {
+		log.Printf("Focus areas requested: %v", focusAreas)
+	}
+	analysis, err := h.openaiClient.AnalyzeMatch(r.Context(), matchSummary, championFilter, summonerFilter, focusAreas)
 	if err != nil {
 		log.Printf("Error analyzing match: %v", err)
 		h.sendError(w, "Failed to analyze match: "+err.Error(), http.StatusInternalServerError)
