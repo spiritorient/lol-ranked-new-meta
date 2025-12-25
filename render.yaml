@@ -14,5 +14,10 @@ services:
         value: americas  # Default, can override in dashboard
       - key: OPENAI_MODEL
         value: gpt-4o-mini  # Default, can override in dashboard
+      - key: ANALYTICS_DATA_PATH
+        value: /data/analytics.json  # Path on persistent disk (set mount path to /data in Render dashboard)
     healthCheckPath: /health
+    # Note: Disks must be added through Render.com dashboard, not in render.yaml
+    # Go to Settings → Disks → Add Disk
+    # Set mount path to: /data
 

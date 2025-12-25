@@ -34,3 +34,7 @@ go.work
 .DS_Store
 Thumbs.db
 
+# Analytics data
+data/
+*.json.tmp
+
