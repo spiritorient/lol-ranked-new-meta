@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard | NewMeta.pro</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3eb4c9;
+            --primary-dark: #124964;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #0d1424;
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Animated background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(62, 180, 201, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(18, 73, 100, 0.1) 0%, transparent 50%),
+                linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg) 100%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-left img {
+            width: 48px;
+            height: 48px;
+        }
+
+        .header-left h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary), #60d9ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(62, 180, 201, 0.3);
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .stat-card .subvalue {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        /* Charts Section */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .chart-card h3 {
+            color: var(--text);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-card h3 span {
+            font-size: 1.2rem;
+        }
+
+        /* Tables */
+        .tables-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .table-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        .table-card h3 {
+            color: var(--text);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(62, 180, 201, 0.05);
+        }
+
+        .count-badge {
+            background: var(--bg);
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Request Log */
+        .log-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .log-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .log-header h3 {
+            color: var(--text);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .log-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .search-input {
+            padding: 8px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.9rem;
+            width: 250px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .filter-select {
+            padding: 8px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .log-table-wrapper {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .log-table-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-table-wrapper::-webkit-scrollbar-track {
+            background: var(--bg);
+            border-radius: 4px;
+        }
+
+        .log-table-wrapper::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .log-table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .log-table th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-secondary);
+            padding: 12px;
+            text-align: left;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .log-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .log-table tr:hover td {
+            background: rgba(62, 180, 201, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-2xx {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-3xx {
+            background: rgba(62, 180, 201, 0.2);
+            color: var(--primary);
+        }
+
+        .status-4xx {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .status-5xx {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .method-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--bg);
+        }
+
+        .method-GET { color: var(--success); }
+        .method-POST { color: var(--primary); }
+        .method-HEAD { color: var(--text-secondary); }
+        .method-PUT { color: var(--warning); }
+        .method-DELETE { color: var(--danger); }
+
+        .path-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .ip-cell {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .time-cell {
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 12px;
+            padding: 24px;
+            color: var(--danger);
+            text-align: center;
+        }
+
+        /* Footer */
+        .dashboard-footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .dashboard-footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .dashboard-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-row,
+            .tables-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .header-left {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .log-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <img src="/logo.png" alt="NewMeta.pro">
+                <h1>Analytics Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <a href="/" class="back-link">← Back to App</a>
+                <button class="refresh-btn" onclick="loadAnalytics()">
+                    🔄 Refresh
+                </button>
+            </div>
+        </header>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading analytics data...</p>
+            </div>
+        </div>
+
+        <footer class="dashboard-footer">
+            <p>NewMeta.pro Analytics • <a href="/analytics?format=json">View Raw JSON</a></p>
+        </footer>
+    </div>
+
+    <script>
+        let analyticsData = null;
+        let allRequests = [];
+        let filteredRequests = [];
+
+        async function loadAnalytics() {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading analytics data...</p>
+                </div>
+            `;
+
+            try {
+                // Get analytics key from URL if present
+                const urlParams = new URLSearchParams(window.location.search);
+                const key = urlParams.get('key');
+                
+                let apiUrl = '/analytics?all=true&format=json';
+                if (key) {
+                    apiUrl += `&key=${key}`;
+                }
+
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(response.status === 401 ? 'Unauthorized - Invalid API key' : 'Failed to load analytics');
+                }
+
+                analyticsData = await response.json();
+                allRequests = analyticsData.all_requests || [];
+                filteredRequests = [...allRequests].reverse(); // Most recent first
+                
+                renderDashboard();
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error-message">
+                        <h3>⚠️ Error Loading Analytics</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderDashboard() {
+            const summary = analyticsData.summary || {};
+            const byPath = analyticsData.by_path || {};
+            const byMethod = analyticsData.by_method || {};
+            const byDay = analyticsData.by_day || {};
+            const userAgents = analyticsData.user_agents || {};
+            const topIps = analyticsData.top_ips || {};
+
+            // Format dates
+            const firstDate = summary.first_request ? new Date(summary.first_request).toLocaleDateString() : 'N/A';
+            const lastDate = summary.last_request ? new Date(summary.last_request).toLocaleString() : 'N/A';
+            const daysSince = summary.first_request ? Math.ceil((Date.now() - new Date(summary.first_request)) / (1000 * 60 * 60 * 24)) : 0;
+
+            document.getElementById('content').innerHTML = `
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon">📊</div>
+                        <div class="label">Total Requests</div>
+                        <div class="value">${(summary.total_requests || 0).toLocaleString()}</div>
+                        <div class="subvalue">Since ${firstDate}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">👥</div>
+                        <div class="label">Unique Visitors</div>
+                        <div class="value">${(summary.unique_ips || 0).toLocaleString()}</div>
+                        <div class="subvalue">Unique IP addresses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">📅</div>
+                        <div class="label">Days Active</div>
+                        <div class="value">${daysSince}</div>
+                        <div class="subvalue">Last: ${lastDate}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">💾</div>
+                        <div class="label">Stored Records</div>
+                        <div class="value">${(summary.total_stored || 0).toLocaleString()}</div>
+                        <div class="subvalue">On persistent disk</div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <h3><span>📈</span> Requests Over Time</h3>
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3><span>📱</span> User Agents</h3>
+                        <canvas id="userAgentsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tables Row -->
+                <div class="tables-row">
+                    <div class="table-card">
+                        <h3><span>🔗</span> Top Paths</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Path</th>
+                                    <th>Requests</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(byPath)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .slice(0, 10)
+                                    .map(([path, count]) => `
+                                        <tr>
+                                            <td class="path-cell" title="${path}">${path}</td>
+                                            <td><span class="count-badge">${count.toLocaleString()}</span></td>
+                                        </tr>
+                                    `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-card">
+                        <h3><span>🌐</span> Top IPs</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Requests</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(topIps)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .slice(0, 10)
+                                    .map(([ip, count]) => `
+                                        <tr>
+                                            <td class="ip-cell">${ip.split(',')[0]}</td>
+                                            <td><span class="count-badge">${count.toLocaleString()}</span></td>
+                                        </tr>
+                                    `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Request Log -->
+                <div class="log-section">
+                    <div class="log-header">
+                        <h3><span>📋</span> Request Log <span style="color: var(--text-secondary); font-weight: normal; font-size: 0.9rem;">(${allRequests.length.toLocaleString()} records)</span></h3>
+                        <div class="log-controls">
+                            <input type="text" class="search-input" id="searchInput" placeholder="Search paths, IPs..." oninput="filterRequests()">
+                            <select class="filter-select" id="methodFilter" onchange="filterRequests()">
+                                <option value="">All Methods</option>
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="HEAD">HEAD</option>
+                            </select>
+                            <select class="filter-select" id="statusFilter" onchange="filterRequests()">
+                                <option value="">All Status</option>
+                                <option value="2">2xx Success</option>
+                                <option value="3">3xx Redirect</option>
+                                <option value="4">4xx Error</option>
+                                <option value="5">5xx Error</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="log-table-wrapper">
+                        <table class="log-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Method</th>
+                                    <th>Path</th>
+                                    <th>Status</th>
+                                    <th>IP</th>
+                                    <th>Response</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            // Render charts
+            renderTimelineChart(byDay);
+            renderUserAgentsChart(userAgents);
+            
+            // Render initial log
+            renderLogTable();
+        }
+
+        function renderTimelineChart(byDay) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            
+            // Sort dates and get last 14 days
+            const sortedDates = Object.entries(byDay)
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .slice(-14);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedDates.map(([date]) => {
+                        const d = new Date(date);
+                        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }),
+                    datasets: [{
+                        label: 'Requests',
+                        data: sortedDates.map(([, count]) => count),
+                        borderColor: '#3eb4c9',
+                        backgroundColor: 'rgba(62, 180, 201, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3eb4c9',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderUserAgentsChart(userAgents) {
+            const ctx = document.getElementById('userAgentsChart').getContext('2d');
+            
+            const colors = [
+                '#3eb4c9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+            ];
+
+            const sortedAgents = Object.entries(userAgents)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8);
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: sortedAgents.map(([agent]) => agent),
+                    datasets: [{
+                        data: sortedAgents.map(([, count]) => count),
+                        backgroundColor: colors.slice(0, sortedAgents.length),
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 12,
+                                usePointStyle: true,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function filterRequests() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const method = document.getElementById('methodFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            filteredRequests = [...allRequests].reverse().filter(req => {
+                // Search filter
+                if (search && !req.path.toLowerCase().includes(search) && 
+                    !req.ip.toLowerCase().includes(search) &&
+                    !(req.user_agent && req.user_agent.toLowerCase().includes(search))) {
+                    return false;
+                }
+                
+                // Method filter
+                if (method && req.method !== method) {
+                    return false;
+                }
+                
+                // Status filter
+                if (status && !String(req.status_code).startsWith(status)) {
+                    return false;
+                }
+                
+                return true;
+            });
+
+            renderLogTable();
+        }
+
+        function renderLogTable() {
+            const tbody = document.getElementById('logTableBody');
+            
+            // Show first 200 for performance
+            const displayRequests = filteredRequests.slice(0, 200);
+            
+            tbody.innerHTML = displayRequests.map(req => {
+                const time = new Date(req.timestamp);
+                const timeStr = time.toLocaleString();
+                
+                const statusClass = `status-${String(req.status_code)[0]}xx`;
+                const methodClass = `method-${req.method}`;
+                
+                return `
+                    <tr>
+                        <td class="time-cell">${timeStr}</td>
+                        <td><span class="method-badge ${methodClass}">${req.method}</span></td>
+                        <td class="path-cell" title="${req.path}">${req.path}</td>
+                        <td><span class="status-badge ${statusClass}">${req.status_code}</span></td>
+                        <td class="ip-cell">${req.ip.split(',')[0]}</td>
+                        <td>${req.response_time_ms}ms</td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (filteredRequests.length > 200) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                            Showing 200 of ${filteredRequests.length.toLocaleString()} matching records. Use filters to narrow down.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', loadAnalytics);
+    </script>
+</body>
+</html>
+

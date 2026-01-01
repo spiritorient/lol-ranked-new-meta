@@ -4,9 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 
 	"lol-ranked-new-meta/analytics"
 )
+
+// contains checks if a string contains a substring
+func contains(s, substr string) bool {
+	return strings.Contains(s, substr)
+}
 
 type AnalyticsHandler struct {
 	tracker *analytics.Tracker
@@ -31,6 +37,20 @@ func (h *AnalyticsHandler) HandleAnalytics(w http.ResponseWriter, r *http.Reques
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+	}
+
+	// If browser requests HTML (and not explicitly asking for JSON), serve the dashboard
+	acceptHeader := r.Header.Get("Accept")
+	wantsJSON := r.URL.Query().Get("format") == "json"
+	wantsHTML := !wantsJSON && (acceptHeader == "" || 
+		(len(acceptHeader) > 0 && acceptHeader[0:1] != "{" && 
+		 (contains(acceptHeader, "text/html") || 
+		  (contains(acceptHeader, "*/*") && !contains(acceptHeader, "application/json")))))
+	
+	// Serve HTML dashboard for browser requests
+	if wantsHTML && r.Method == "GET" {
+		http.ServeFile(w, r, "./frontend/analytics.html")
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
