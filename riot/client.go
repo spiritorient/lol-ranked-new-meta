@@ -236,7 +236,7 @@ func FormatParticipantDeepDive(participant *types.RiotParticipant, gameDuration 
 	}
 
 	var detail string
-	detail += fmt.Sprintf("Summoner: %s (%s#%s)\n", participant.SummonerName, participant.RiotIDName, participant.RiotIDTagline)
+	detail += fmt.Sprintf("Summoner: %s (%s#%s)\n", participant.SummonerName, participant.RiotIDGameName, participant.RiotIDTagline)
 	detail += fmt.Sprintf("Champion: %s (Level %d)\n", participant.ChampionName, participant.ChampLevel)
 	detail += fmt.Sprintf("Team Position: %s (Lane: %s, Role: %s)\n", participant.TeamPosition, participant.Lane, participant.Role)
 	detail += fmt.Sprintf("Result: %s\n\n", map[bool]string{true: "Victory", false: "Defeat"}[participant.Win])

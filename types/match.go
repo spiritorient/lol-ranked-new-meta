@@ -120,31 +120,40 @@ type RiotMatchInfo struct {
 }
 
 type RiotParticipant struct {
+	AllInPings                     int                    `json:"allInPings"`
+	AssistMePings                  int                    `json:"assistMePings"`
 	Assists                        int                    `json:"assists"`
 	BaronKills                     int                    `json:"baronKills"`
+	BasicPings                     int                    `json:"basicPings"`
 	BountyLevel                    int                    `json:"bountyLevel"`
 	Challenges                     map[string]interface{} `json:"challenges"`
 	ChampLevel                     int                    `json:"champLevel"`
 	ChampionID                     int                    `json:"championId"`
 	ChampionName                   string                 `json:"championName"`
 	ChampionTransform              int                    `json:"championTransform"`
+	CommandPings                   int                    `json:"commandPings"`
 	ConsumablesPurchased           int                    `json:"consumablesPurchased"`
 	DamageDealtToBuildings         int                    `json:"damageDealtToBuildings"`
 	DamageDealtToObjectives        int                    `json:"damageDealtToObjectives"`
 	DamageDealtToTurrets           int                    `json:"damageDealtToTurrets"`
 	DamageSelfMitigated            int                    `json:"damageSelfMitigated"`
-	Deaths                          int                    `json:"deaths"`
+	DangerPings                    int                    `json:"dangerPings"`
+	Deaths                         int                    `json:"deaths"`
 	DetectorWardsPlaced            int                    `json:"detectorWardsPlaced"`
 	DoubleKills                     int                    `json:"doubleKills"`
 	DragonKills                     int                    `json:"dragonKills"`
+	EnemyMissingPings               int                    `json:"enemyMissingPings"`
+	EnemyVisionPings                int                    `json:"enemyVisionPings"`
 	FirstBloodAssist               bool                   `json:"firstBloodAssist"`
 	FirstBloodKill                 bool                   `json:"firstBloodKill"`
 	FirstTowerAssist               bool                   `json:"firstTowerAssist"`
 	FirstTowerKill                 bool                   `json:"firstTowerKill"`
 	GameEndedInEarlySurrender      bool                   `json:"gameEndedInEarlySurrender"`
 	GameEndedInSurrender           bool                   `json:"gameEndedInSurrender"`
+	GetBackPings                   int                    `json:"getBackPings"`
 	GoldEarned                     int                    `json:"goldEarned"`
 	GoldSpent                      int                    `json:"goldSpent"`
+	HoldPings                      int                    `json:"holdPings"`
 	IndividualPosition             string                 `json:"individualPosition"`
 	InhibitorKills                 int                    `json:"inhibitorKills"`
 	InhibitorTakedowns             int                    `json:"inhibitorTakedowns"`
@@ -167,12 +176,14 @@ type RiotParticipant struct {
 	MagicDamageDealt               int                    `json:"magicDamageDealt"`
 	MagicDamageDealtToChampions    int                    `json:"magicDamageDealtToChampions"`
 	MagicDamageTaken               int                    `json:"magicDamageTaken"`
+	NeedVisionPings                int                    `json:"needVisionPings"`
 	NeutralMinionsKilled           int                    `json:"neutralMinionsKilled"`
 	NexusKills                     int                    `json:"nexusKills"`
 	NexusTakedowns                 int                    `json:"nexusTakedowns"`
 	NexusLost                      int                    `json:"nexusLost"`
 	ObjectivesStolen               int                    `json:"objectivesStolen"`
 	ObjectivesStolenAssists        int                    `json:"objectivesStolenAssists"`
+	OnMyWayPings                   int                    `json:"onMyWayPings"`
 	ParticipantID                  int                    `json:"participantId"`
 	PentaKills                     int                    `json:"pentaKills"`
 	Perks                          RiotPerks              `json:"perks"`
@@ -180,9 +191,11 @@ type RiotParticipant struct {
 	PhysicalDamageDealtToChampions int                    `json:"physicalDamageDealtToChampions"`
 	PhysicalDamageTaken            int                    `json:"physicalDamageTaken"`
 	ProfileIcon                    int                    `json:"profileIcon"`
+	PushPings                      int                    `json:"pushPings"`
 	Puuid                          string                 `json:"puuid"`
 	QuadraKills                    int                    `json:"quadraKills"`
-	RiotIDName                     string                 `json:"riotIdName"`
+	RetreatPings                   int                    `json:"retreatPings"`
+	RiotIDGameName                 string                 `json:"riotIdGameName"`
 	RiotIDTagline                  string                 `json:"riotIdTagline"`
 	Role                           string                 `json:"role"`
 	SightWardsBoughtInGame         int                    `json:"sightWardsBoughtInGame"`
@@ -220,6 +233,7 @@ type RiotParticipant struct {
 	TurretTakedowns                int                    `json:"turretTakedowns"`
 	TurretsLost                    int                    `json:"turretsLost"`
 	UnrealKills                    int                    `json:"unrealKills"`
+	VisionClearedPings             int                    `json:"visionClearedPings"`
 	VisionScore                    int                    `json:"visionScore"`
 	VisionWardsBoughtInGame        int                    `json:"visionWardsBoughtInGame"`
 	WardsKilled                    int                    `json:"wardsKilled"`
