@@ -17,6 +17,7 @@ type Config struct {
 	AnalyticsDataPath    string
 	AnalyticsMaxDays     int  // Maximum days to keep requests (0 = unlimited)
 	AnalyticsMaxRecords  int  // Maximum total records to keep (0 = unlimited)
+	DashboardDataPath    string // Path to store dashboard data
 }
 
 // Load reads configuration from environment variables
@@ -35,6 +36,8 @@ func Load() (*Config, error) {
 		AnalyticsDataPath:   getEnv("ANALYTICS_DATA_PATH", "/data/analytics.json"),
 		AnalyticsMaxDays:    getEnvInt("ANALYTICS_MAX_DAYS", 0),      // 0 = unlimited
 		AnalyticsMaxRecords: getEnvInt("ANALYTICS_MAX_RECORDS", 0),   // 0 = unlimited
+		// Dashboard data path - stores on Render persistent disk
+		DashboardDataPath:   getEnv("DASHBOARD_DATA_PATH", "/data/dashboards"),
 	}
 
 	// Validate required configuration

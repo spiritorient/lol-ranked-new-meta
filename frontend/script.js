@@ -2,6 +2,7 @@
 const API_URL = window.location.origin;
 
 let matchData = null;
+let currentDashboardID = localStorage.getItem('dashboardID') || '';
 
 async function analyzeMatch() {
     const region = document.getElementById('region').value.trim();
@@ -366,6 +367,73 @@ function renderDeepDive(data) {
     
     html += `</div>`;
     return html;
+}
+
+// Add match to dashboard
+async function addToDashboard() {
+    const region = document.getElementById('region').value.trim();
+    const gameId = document.getElementById('gameId').value.trim();
+
+    if (!region) {
+        showError('Please select a Region');
+        return;
+    }
+
+    if (!gameId) {
+        showError('Please enter a Game ID');
+        return;
+    }
+
+    const matchId = `${region}_${gameId}`;
+
+    // Show loading state
+    const btn = document.getElementById('dashboardBtn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    // Hide previous messages
+    document.getElementById('dashboardSuccess').classList.add('hidden');
+    document.getElementById('error').classList.add('hidden');
+
+    try {
+        const response = await fetch(`${API_URL}/dashboard-save`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                match_id: matchId,
+                dashboard_id: currentDashboardID
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+
+        if (data.success) {
+            // Store dashboard ID for future use
+            currentDashboardID = data.dashboard_id;
+            localStorage.setItem('dashboardID', currentDashboardID);
+
+            // Show success message
+            const successDiv = document.getElementById('dashboardSuccess');
+            const link = document.getElementById('dashboardLink');
+            const dashboardUrl = `${window.location.origin}/d/${currentDashboardID}`;
+            link.href = dashboardUrl;
+            link.textContent = dashboardUrl;
+            successDiv.classList.remove('hidden');
+        }
+    } catch (error) {
+        showError(`Failed to save to dashboard: ${error.message}`);
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 }
 
 // Handle focus type changes

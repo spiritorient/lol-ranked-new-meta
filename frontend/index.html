@@ -91,7 +91,10 @@
                 <p class="help-text">💡 Tip: Select specific areas to get more detailed analysis on those aspects</p>
             </div>
             
-            <button id="analyzeBtn" onclick="analyzeMatch()">Analyze Match</button>
+            <div class="button-row">
+                <button id="analyzeBtn" onclick="analyzeMatch()">Analyze Match</button>
+                <button id="dashboardBtn" onclick="addToDashboard()" class="secondary-btn">📊 Add to Dashboard</button>
+            </div>
         </div>
 
         <div id="loading" class="loading hidden">
@@ -100,6 +103,11 @@
         </div>
 
         <div id="error" class="error hidden"></div>
+        
+        <div id="dashboardSuccess" class="success-message hidden">
+            <p>✅ Match saved to dashboard!</p>
+            <p>View your dashboard: <a id="dashboardLink" href="" target="_blank"></a></p>
+        </div>
 
         <div id="results" class="results hidden">
             <div class="tabs">

@@ -141,8 +141,13 @@ header p {
     padding-left: 32px;
 }
 
+.button-row {
+    display: flex;
+    gap: 12px;
+}
+
 #analyzeBtn {
-    width: 100%;
+    flex: 2;
     padding: 14px;
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
@@ -161,6 +166,44 @@ header p {
 
 #analyzeBtn:active {
     transform: translateY(0);
+}
+
+.secondary-btn {
+    flex: 1;
+    padding: 14px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+    border-color: var(--primary);
+    background: var(--bg-secondary);
+    transform: translateY(-2px);
+}
+
+.secondary-btn:active {
+    transform: translateY(0);
+}
+
+.success-message {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.success-message a {
+    color: var(--primary);
+    text-decoration: underline;
 }
 
 .loading {
@@ -542,6 +585,10 @@ header p {
     
     .form-row {
         grid-template-columns: 1fr;
+    }
+    
+    .button-row {
+        flex-direction: column;
     }
     
     .tabs {

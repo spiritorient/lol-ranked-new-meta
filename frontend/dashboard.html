@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Dashboard | NewMeta.pro</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3eb4c9;
+            --primary-dark: #124964;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #0d1424;
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --blue-team: #3b82f6;
+            --red-team: #ef4444;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(62, 180, 201, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+                linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg) 100%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-left img {
+            width: 48px;
+            height: 48px;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-title .dashboard-id {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        .share-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--purple), var(--primary-dark));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .stat-card .icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .stat-card .value.win {
+            color: var(--success);
+        }
+
+        .stat-card .value.loss {
+            color: var(--danger);
+        }
+
+        .stat-card .label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        /* Charts Section */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .chart-card h3 {
+            color: var(--text);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Match List */
+        .matches-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .matches-section h3 {
+            color: var(--text);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .match-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .match-card:hover {
+            border-color: var(--primary);
+        }
+
+        .match-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .match-card.win {
+            border-left: 4px solid var(--success);
+        }
+
+        .match-card.loss {
+            border-left: 4px solid var(--danger);
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .match-result {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .match-result.win {
+            color: var(--success);
+        }
+
+        .match-result.loss {
+            color: var(--danger);
+        }
+
+        .match-date {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .match-duration {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .match-teams {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .team {
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .team.blue {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .team.red {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .team-header {
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .team.blue .team-header {
+            color: var(--blue-team);
+        }
+
+        .team.red .team-header {
+            color: var(--red-team);
+        }
+
+        .player-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 0.85rem;
+        }
+
+        .player-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .champion-name {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .player-kda {
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        /* Champion Stats */
+        .champion-stats {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .champion-stats h3 {
+            color: var(--text);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .champion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .champion-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .champion-card .name {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .champion-card .games {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .champion-card .winrate {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .champion-card .winrate.high {
+            color: var(--success);
+        }
+
+        .champion-card .winrate.low {
+            color: var(--danger);
+        }
+
+        .champion-card .winrate.mid {
+            color: var(--warning);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h2 {
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            margin-bottom: 24px;
+        }
+
+        .empty-state a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .empty-state a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 12px;
+            padding: 24px;
+            color: var(--danger);
+            text-align: center;
+        }
+
+        /* Footer */
+        .dashboard-footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .dashboard-footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Match Details Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 900px;
+            width: 100%;
+            margin: 24px 0;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h2 {
+            color: var(--text);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .detail-item {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .detail-item .label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-item .value {
+            color: var(--text);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .header-left {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .match-teams {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <img src="/logo.png" alt="NewMeta.pro">
+                <div class="header-title">
+                    <h1>📊 Match Dashboard</h1>
+                    <div class="dashboard-id" id="dashboardIdDisplay"></div>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="/" class="back-link">← Back to Analyzer</a>
+                <button class="share-btn" onclick="copyDashboardLink()">📋 Copy Link</button>
+            </div>
+        </header>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading dashboard...</p>
+            </div>
+        </div>
+
+        <footer class="dashboard-footer">
+            <p>NewMeta.pro Dashboard • <a href="/">Analyze more matches</a></p>
+        </footer>
+    </div>
+
+    <!-- Match Details Modal -->
+    <div class="modal-overlay" id="matchModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modalTitle">Match Details</h2>
+                <button class="modal-close" onclick="closeMatchModal()">&times;</button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let dashboardData = null;
+        let dashboardID = '';
+
+        // Get dashboard ID from URL
+        function getDashboardID() {
+            const path = window.location.pathname;
+            let id = path.replace('/d/', '').replace('/dashboard/', '').replace('/dashboard', '');
+            return id || '';
+        }
+
+        async function loadDashboard() {
+            dashboardID = getDashboardID();
+            
+            if (!dashboardID) {
+                showEmptyPrompt();
+                return;
+            }
+
+            document.getElementById('dashboardIdDisplay').textContent = `ID: ${dashboardID}`;
+
+            try {
+                const response = await fetch(`/d/${dashboardID}?format=json`);
+                dashboardData = await response.json();
+
+                if (dashboardData.error) {
+                    showError(dashboardData.error);
+                    return;
+                }
+
+                if (!dashboardData.matches || dashboardData.matches.length === 0) {
+                    showEmpty();
+                    return;
+                }
+
+                renderDashboard();
+            } catch (error) {
+                showError('Failed to load dashboard: ' + error.message);
+            }
+        }
+
+        function showEmptyPrompt() {
+            document.getElementById('content').innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">📊</div>
+                    <h2>Welcome to Match Dashboard</h2>
+                    <p>To create your personal dashboard, go to the <a href="/">Match Analyzer</a> and click "Add to Dashboard" on any match.</p>
+                    <p>Your dashboard link will be generated automatically and saved in your browser.</p>
+                </div>
+            `;
+        }
+
+        function showEmpty() {
+            document.getElementById('content').innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <h2>No Matches Yet</h2>
+                    <p>This dashboard is empty. <a href="/">Analyze a match</a> and add it to your dashboard!</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('content').innerHTML = `
+                <div class="error-message">
+                    <h3>⚠️ Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function renderDashboard() {
+            const matches = dashboardData.matches;
+            
+            // Calculate stats
+            const totalMatches = matches.length;
+            const wins = matches.filter(m => {
+                // Find the first participant and check if blue team won
+                // This is simplified - in real use you'd track which player this dashboard belongs to
+                return m.blue_team_win;
+            }).length;
+            const losses = totalMatches - wins;
+            
+            // Calculate averages across all participants
+            let totalKills = 0, totalDeaths = 0, totalAssists = 0;
+            let totalCS = 0, totalGold = 0, totalDamage = 0, totalVision = 0;
+            let participantCount = 0;
+
+            // Champion stats
+            const championStats = {};
+
+            matches.forEach(match => {
+                match.participants.forEach(p => {
+                    totalKills += p.kills;
+                    totalDeaths += p.deaths;
+                    totalAssists += p.assists;
+                    totalCS += p.total_minions_killed;
+                    totalGold += p.gold_earned;
+                    totalDamage += p.total_damage_dealt_to_champions;
+                    totalVision += p.vision_score;
+                    participantCount++;
+
+                    // Track champion stats
+                    if (!championStats[p.champion_name]) {
+                        championStats[p.champion_name] = { games: 0, wins: 0, kills: 0, deaths: 0, assists: 0 };
+                    }
+                    championStats[p.champion_name].games++;
+                    if (p.win) championStats[p.champion_name].wins++;
+                    championStats[p.champion_name].kills += p.kills;
+                    championStats[p.champion_name].deaths += p.deaths;
+                    championStats[p.champion_name].assists += p.assists;
+                });
+            });
+
+            const avgKDA = participantCount > 0 ? 
+                ((totalKills + totalAssists) / Math.max(totalDeaths, 1)).toFixed(2) : '0.00';
+
+            document.getElementById('content').innerHTML = `
+                <!-- Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon">🎮</div>
+                        <div class="value">${totalMatches}</div>
+                        <div class="label">Matches Tracked</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">✅</div>
+                        <div class="value win">${wins}</div>
+                        <div class="label">Wins (Blue Team)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">❌</div>
+                        <div class="value loss">${losses}</div>
+                        <div class="label">Losses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">📈</div>
+                        <div class="value">${totalMatches > 0 ? ((wins/totalMatches)*100).toFixed(0) : 0}%</div>
+                        <div class="label">Win Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">⚔️</div>
+                        <div class="value">${avgKDA}</div>
+                        <div class="label">Avg KDA</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <h3>📈 Match History</h3>
+                        <canvas id="historyChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>🏆 Champions Played</h3>
+                        <canvas id="championsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Champion Stats -->
+                <div class="champion-stats">
+                    <h3>🎯 Champion Performance</h3>
+                    <div class="champion-grid" id="championGrid"></div>
+                </div>
+
+                <!-- Match List -->
+                <div class="matches-section">
+                    <h3>📋 Match History (${totalMatches} matches)</h3>
+                    <div id="matchList"></div>
+                </div>
+            `;
+
+            // Render charts
+            renderHistoryChart(matches);
+            renderChampionsChart(championStats);
+            
+            // Render champion cards
+            renderChampionCards(championStats);
+
+            // Render match list
+            renderMatchList(matches);
+        }
+
+        function renderHistoryChart(matches) {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            
+            // Get last 10 matches
+            const recentMatches = matches.slice(-10);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: recentMatches.map((m, i) => `Match ${i + 1}`),
+                    datasets: [{
+                        label: 'Game Duration (min)',
+                        data: recentMatches.map(m => Math.round(m.game_duration / 60)),
+                        backgroundColor: recentMatches.map(m => 
+                            m.blue_team_win ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)'
+                        ),
+                        borderColor: recentMatches.map(m => 
+                            m.blue_team_win ? '#10b981' : '#ef4444'
+                        ),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(51, 65, 85, 0.5)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChampionsChart(championStats) {
+            const ctx = document.getElementById('championsChart').getContext('2d');
+            
+            const topChamps = Object.entries(championStats)
+                .sort((a, b) => b[1].games - a[1].games)
+                .slice(0, 6);
+
+            const colors = ['#3eb4c9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: topChamps.map(([name]) => name),
+                    datasets: [{
+                        data: topChamps.map(([, stats]) => stats.games),
+                        backgroundColor: colors,
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 12,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChampionCards(championStats) {
+            const grid = document.getElementById('championGrid');
+            
+            const sortedChamps = Object.entries(championStats)
+                .sort((a, b) => b[1].games - a[1].games)
+                .slice(0, 8);
+
+            grid.innerHTML = sortedChamps.map(([name, stats]) => {
+                const winrate = stats.games > 0 ? (stats.wins / stats.games * 100).toFixed(0) : 0;
+                const avgKDA = stats.games > 0 ? 
+                    ((stats.kills + stats.assists) / Math.max(stats.deaths, 1)).toFixed(2) : '0.00';
+                
+                let winrateClass = 'mid';
+                if (winrate >= 60) winrateClass = 'high';
+                else if (winrate < 50) winrateClass = 'low';
+
+                return `
+                    <div class="champion-card">
+                        <div class="name">${name}</div>
+                        <div class="games">${stats.games} games</div>
+                        <div class="winrate ${winrateClass}">${winrate}% WR</div>
+                        <div class="games">${avgKDA} KDA</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMatchList(matches) {
+            const list = document.getElementById('matchList');
+            
+            // Reverse to show most recent first
+            const sortedMatches = [...matches].reverse();
+
+            list.innerHTML = sortedMatches.map((match, index) => {
+                const duration = Math.floor(match.game_duration / 60);
+                const date = new Date(match.saved_at).toLocaleDateString();
+                const isWin = match.blue_team_win;
+
+                const blueTeam = match.participants.filter(p => p.team_id === 100);
+                const redTeam = match.participants.filter(p => p.team_id === 200);
+
+                return `
+                    <div class="match-card ${isWin ? 'win' : 'loss'}" onclick="showMatchDetails(${matches.length - 1 - index})">
+                        <div class="match-header">
+                            <span class="match-result ${isWin ? 'win' : 'loss'}">${isWin ? '🏆 VICTORY' : '💀 DEFEAT'}</span>
+                            <span class="match-duration">${duration}min</span>
+                            <span class="match-date">${date}</span>
+                        </div>
+                        <div class="match-teams">
+                            <div class="team blue">
+                                <div class="team-header">Blue Team ${isWin ? '(Winner)' : ''}</div>
+                                ${blueTeam.map(p => `
+                                    <div class="player-row">
+                                        <span class="player-name">
+                                            <span class="champion-name">${p.champion_name}</span>
+                                        </span>
+                                        <span class="player-kda">${p.kills}/${p.deaths}/${p.assists}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="team red">
+                                <div class="team-header">Red Team ${!isWin ? '(Winner)' : ''}</div>
+                                ${redTeam.map(p => `
+                                    <div class="player-row">
+                                        <span class="player-name">
+                                            <span class="champion-name">${p.champion_name}</span>
+                                        </span>
+                                        <span class="player-kda">${p.kills}/${p.deaths}/${p.assists}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showMatchDetails(index) {
+            const match = dashboardData.matches[index];
+            const modal = document.getElementById('matchModal');
+            const content = document.getElementById('modalContent');
+            
+            const duration = Math.floor(match.game_duration / 60);
+            
+            content.innerHTML = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="label">Duration</div>
+                        <div class="value">${duration}min</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Game Mode</div>
+                        <div class="value">${match.game_mode}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Blue Dragons</div>
+                        <div class="value">${match.blue_team_objectives?.dragon_kills || 0}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Red Dragons</div>
+                        <div class="value">${match.red_team_objectives?.dragon_kills || 0}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Blue Barons</div>
+                        <div class="value">${match.blue_team_objectives?.baron_kills || 0}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Red Barons</div>
+                        <div class="value">${match.red_team_objectives?.baron_kills || 0}</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 20px 0 12px; color: var(--text);">All Players</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: var(--bg); text-align: left;">
+                                <th style="padding: 12px; color: var(--text-secondary);">Champion</th>
+                                <th style="padding: 12px; color: var(--text-secondary);">Player</th>
+                                <th style="padding: 12px; color: var(--text-secondary);">KDA</th>
+                                <th style="padding: 12px; color: var(--text-secondary);">Damage</th>
+                                <th style="padding: 12px; color: var(--text-secondary);">CS</th>
+                                <th style="padding: 12px; color: var(--text-secondary);">Gold</th>
+                                <th style="padding: 12px; color: var(--text-secondary);">Vision</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${match.participants.map(p => `
+                                <tr style="border-bottom: 1px solid var(--border); ${p.team_id === 100 ? 'background: rgba(59, 130, 246, 0.05)' : 'background: rgba(239, 68, 68, 0.05)'}">
+                                    <td style="padding: 10px 12px; color: var(--primary); font-weight: 500;">${p.champion_name}</td>
+                                    <td style="padding: 10px 12px; color: var(--text);">${p.summoner_name || p.riot_id_name || 'Unknown'}</td>
+                                    <td style="padding: 10px 12px; color: var(--text);">${p.kills}/${p.deaths}/${p.assists}</td>
+                                    <td style="padding: 10px 12px; color: var(--text);">${(p.total_damage_dealt_to_champions / 1000).toFixed(1)}k</td>
+                                    <td style="padding: 10px 12px; color: var(--text);">${p.total_minions_killed}</td>
+                                    <td style="padding: 10px 12px; color: var(--text);">${(p.gold_earned / 1000).toFixed(1)}k</td>
+                                    <td style="padding: 10px 12px; color: var(--text);">${p.vision_score}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeMatchModal() {
+            document.getElementById('matchModal').classList.remove('active');
+        }
+
+        function closeModal(event) {
+            if (event.target === event.currentTarget) {
+                closeMatchModal();
+            }
+        }
+
+        function copyDashboardLink() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Dashboard link copied to clipboard!');
+            }).catch(() => {
+                prompt('Copy this link:', url);
+            });
+        }
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMatchModal();
+        });
+    </script>
+</body>
+</html>
+

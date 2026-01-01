@@ -3,9 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"lol-ranked-new-meta/analytics"
 	"lol-ranked-new-meta/config"
+	"lol-ranked-new-meta/dashboard"
 	"lol-ranked-new-meta/handlers"
 	"lol-ranked-new-meta/openai"
 	"lol-ranked-new-meta/riot"
@@ -48,6 +50,22 @@ func main() {
 		analyticsHandler = handlers.NewAnalyticsHandler(analyticsTracker)
 	}
 
+	// Initialize dashboard storage
+	dashboardStorage, err := dashboard.NewStorage(cfg.DashboardDataPath)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize dashboard storage: %v", err)
+		log.Printf("Dashboard feature will not be available")
+		dashboardStorage = nil
+	} else {
+		log.Printf("Dashboard storage enabled (data stored at: %s)", cfg.DashboardDataPath)
+	}
+
+	// Create dashboard handler
+	var dashboardHandler *handlers.DashboardHandler
+	if dashboardStorage != nil {
+		dashboardHandler = handlers.NewDashboardHandler(dashboardStorage, riotClient)
+	}
+
 	// Create a new mux
 	mux := http.NewServeMux()
 
@@ -63,6 +81,16 @@ func main() {
 	if analyticsHandler != nil {
 		mux.HandleFunc("/analytics", analyticsHandler.HandleAnalytics)
 		log.Printf("  GET  /analytics?key=<ANALYTICS_KEY> - View analytics (optional key protection)")
+	}
+
+	// Dashboard endpoints (only if storage is available)
+	if dashboardHandler != nil {
+		mux.HandleFunc("/dashboard-save", dashboardHandler.HandleSaveMatch)
+		mux.HandleFunc("/dashboard/", dashboardHandler.HandleGetDashboard)
+		mux.HandleFunc("/d/", dashboardHandler.HandleGetDashboard)
+		mux.HandleFunc("/dashboard", dashboardHandler.HandleGetDashboard)
+		log.Printf("  POST /dashboard-save - Save match to dashboard")
+		log.Printf("  GET  /dashboard/{id} or /d/{id} - View dashboard")
 	}
 
 	// Serve frontend static files (CSS, JS, images)
@@ -90,8 +118,12 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		// Serve API routes normally (they're already registered above)
-		if path == "/analyze-match" || path == "/analyze-match-get" || path == "/health" || path == "/analytics" || path == "/whitepaper" || path == "/whitepaper.md" || path == "/riot.txt" {
+		if path == "/analyze-match" || path == "/analyze-match-get" || path == "/health" || path == "/analytics" || path == "/whitepaper" || path == "/whitepaper.md" || path == "/riot.txt" || path == "/dashboard-save" {
 			// This won't be reached since those routes are registered first, but good to check
+			return
+		}
+		// Dashboard routes are handled by their own handlers
+		if strings.HasPrefix(path, "/dashboard") || strings.HasPrefix(path, "/d/") {
 			return
 		}
 		// Serve index.html for all other routes
