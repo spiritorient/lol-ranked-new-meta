@@ -39,7 +39,7 @@ type SaveMatchResponse struct {
 	Error       string `json:"error,omitempty"`
 }
 
-// HandleSaveMatch saves a match to a dashboard
+// HandleSaveMatch saves a match to a dashboard (stores ALL Riot API data)
 func (h *DashboardHandler) HandleSaveMatch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -85,7 +85,7 @@ func (h *DashboardHandler) HandleSaveMatch(w http.ResponseWriter, r *http.Reques
 	// Sanitize dashboard ID
 	dashboardID = sanitizeDashboardID(dashboardID)
 
-	// Fetch match from Riot API
+	// Fetch COMPLETE match data from Riot API
 	riotMatch, err := h.riotClient.GetMatch(req.MatchID)
 	if err != nil {
 		json.NewEncoder(w).Encode(SaveMatchResponse{
@@ -101,8 +101,8 @@ func (h *DashboardHandler) HandleSaveMatch(w http.ResponseWriter, r *http.Reques
 		region = parts[0]
 	}
 
-	// Convert to dashboard format
-	dashMatch := dashboard.ConvertRiotMatch(riotMatch, region)
+	// Create dashboard match with FULL Riot data
+	dashMatch := dashboard.CreateDashboardMatch(riotMatch, dashboardID, region)
 
 	// Save to dashboard
 	if err := h.storage.AddMatch(dashboardID, dashMatch); err != nil {
@@ -116,7 +116,7 @@ func (h *DashboardHandler) HandleSaveMatch(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(SaveMatchResponse{
 		Success:     true,
 		DashboardID: dashboardID,
-		Message:     "Match saved successfully",
+		Message:     "Match saved with ALL data from Riot API",
 	})
 }
 
@@ -133,7 +133,7 @@ func (h *DashboardHandler) HandleGetDashboard(w http.ResponseWriter, r *http.Req
 	path := r.URL.Path
 	dashboardID := strings.TrimPrefix(path, "/d/")
 	dashboardID = strings.TrimPrefix(dashboardID, "/dashboard/")
-	
+
 	// If just /dashboard with no ID, serve the page which will prompt for ID
 	if dashboardID == "" || dashboardID == "dashboard" || dashboardID == "d" {
 		if wantsHTML {
@@ -157,7 +157,7 @@ func (h *DashboardHandler) HandleGetDashboard(w http.ResponseWriter, r *http.Req
 	w.Header().Set("Content-Type", "application/json")
 
 	dashboardID = sanitizeDashboardID(dashboardID)
-	
+
 	dashboardData, err := h.storage.LoadDashboard(dashboardID)
 	if err != nil {
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -191,4 +191,3 @@ func sanitizeDashboardID(id string) string {
 	}
 	return sanitized
 }
-

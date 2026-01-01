@@ -373,6 +373,7 @@ function renderDeepDive(data) {
 async function addToDashboard() {
     const region = document.getElementById('region').value.trim();
     const gameId = document.getElementById('gameId').value.trim();
+    const dashboardIdInput = document.getElementById('dashboardId').value.trim();
 
     if (!region) {
         showError('Please select a Region');
@@ -385,6 +386,9 @@ async function addToDashboard() {
     }
 
     const matchId = `${region}_${gameId}`;
+    
+    // Use input field value, or stored value, or let server generate
+    const dashboardIdToUse = dashboardIdInput || currentDashboardID;
 
     // Show loading state
     const btn = document.getElementById('dashboardBtn');
@@ -404,7 +408,7 @@ async function addToDashboard() {
             },
             body: JSON.stringify({
                 match_id: matchId,
-                dashboard_id: currentDashboardID
+                dashboard_id: dashboardIdToUse
             })
         });
 
@@ -419,6 +423,9 @@ async function addToDashboard() {
             // Store dashboard ID for future use
             currentDashboardID = data.dashboard_id;
             localStorage.setItem('dashboardID', currentDashboardID);
+            
+            // Update the input field with the ID (in case it was auto-generated)
+            document.getElementById('dashboardId').value = currentDashboardID;
 
             // Show success message
             const successDiv = document.getElementById('dashboardSuccess');
@@ -438,6 +445,11 @@ async function addToDashboard() {
 
 // Handle focus type changes
 document.addEventListener('DOMContentLoaded', () => {
+    // Load saved dashboard ID into input field
+    if (currentDashboardID) {
+        document.getElementById('dashboardId').value = currentDashboardID;
+    }
+    
     // Focus type radio buttons
     document.querySelectorAll('input[name="focusType"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
