@@ -86,10 +86,12 @@ func main() {
 	// Dashboard endpoints (only if storage is available)
 	if dashboardHandler != nil {
 		mux.HandleFunc("/dashboard-save", dashboardHandler.HandleSaveMatch)
+		mux.HandleFunc("/dashboards", dashboardHandler.HandleListDashboards)
 		mux.HandleFunc("/dashboard/", dashboardHandler.HandleGetDashboard)
 		mux.HandleFunc("/d/", dashboardHandler.HandleGetDashboard)
 		mux.HandleFunc("/dashboard", dashboardHandler.HandleGetDashboard)
 		log.Printf("  POST /dashboard-save - Save match to dashboard")
+		log.Printf("  GET  /dashboards - List all dashboards")
 		log.Printf("  GET  /dashboard/{id} or /d/{id} - View dashboard")
 	}
 

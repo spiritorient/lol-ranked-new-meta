@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -167,6 +168,104 @@ func (h *DashboardHandler) HandleGetDashboard(w http.ResponseWriter, r *http.Req
 	}
 
 	json.NewEncoder(w).Encode(dashboardData)
+}
+
+// HandleListDashboards returns all dashboard IDs with summary info
+func (h *DashboardHandler) HandleListDashboards(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Check if browser wants HTML
+	acceptHeader := r.Header.Get("Accept")
+	wantsHTML := strings.Contains(acceptHeader, "text/html")
+
+	ids, err := h.storage.ListDashboards()
+	if err != nil {
+		if wantsHTML {
+			w.Header().Set("Content-Type", "text/html")
+			w.Write([]byte("<h1>Error loading dashboards</h1><p>" + err.Error() + "</p>"))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": "Failed to list dashboards: " + err.Error(),
+		})
+		return
+	}
+
+	// Build dashboard list with match counts
+	type DashboardSummary struct {
+		ID          string `json:"id"`
+		MatchCount  int    `json:"match_count"`
+		LastUpdated string `json:"last_updated"`
+	}
+
+	summaries := make([]DashboardSummary, 0, len(ids))
+	for _, id := range ids {
+		data, err := h.storage.LoadDashboard(id)
+		if err != nil {
+			continue
+		}
+		summaries = append(summaries, DashboardSummary{
+			ID:          id,
+			MatchCount:  len(data.Matches),
+			LastUpdated: data.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	if wantsHTML {
+		w.Header().Set("Content-Type", "text/html")
+		html := `<!DOCTYPE html>
+<html>
+<head>
+	<title>All Dashboards - New Meta</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style>
+		:root { --bg: #0a0a0f; --card: #12121a; --primary: #00d4aa; --text: #e0e0e0; }
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
+		h1 { color: var(--primary); margin-bottom: 1.5rem; }
+		.dashboard-list { display: grid; gap: 1rem; max-width: 800px; }
+		.dashboard-card { background: var(--card); padding: 1rem 1.5rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--primary); }
+		.dashboard-card:hover { background: #1a1a24; }
+		.dashboard-id { font-weight: 600; font-size: 1.1rem; }
+		.dashboard-id a { color: var(--primary); text-decoration: none; }
+		.dashboard-id a:hover { text-decoration: underline; }
+		.dashboard-info { color: #888; font-size: 0.85rem; }
+		.match-count { background: var(--primary); color: #000; padding: 0.25rem 0.75rem; border-radius: 20px; font-weight: 600; }
+		.empty { color: #666; font-style: italic; }
+	</style>
+</head>
+<body>
+	<h1>📊 All Dashboards</h1>
+	<div class="dashboard-list">`
+
+		if len(summaries) == 0 {
+			html += `<p class="empty">No dashboards created yet.</p>`
+		} else {
+			for _, s := range summaries {
+				html += `<div class="dashboard-card">
+					<div>
+						<div class="dashboard-id"><a href="/d/` + s.ID + `">` + s.ID + `</a></div>
+						<div class="dashboard-info">Last updated: ` + s.LastUpdated + `</div>
+					</div>
+					<span class="match-count">` + fmt.Sprintf("%d", s.MatchCount) + ` matches</span>
+				</div>`
+			}
+		}
+
+		html += `</div>
+	<p style="margin-top: 2rem; color: #666;"><a href="/" style="color: var(--primary);">← Back to Analyzer</a></p>
+</body>
+</html>`
+		w.Write([]byte(html))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"dashboards": summaries,
+		"total":      len(summaries),
+	})
 }
 
 // generateDashboardID creates a random dashboard ID
