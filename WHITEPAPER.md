@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-New Meta Match Advisor transforms your League of Legends post-game statistics into actionable coaching insights using artificial intelligence. By combining official Riot Games match data with Anthropic's Claude AI, the platform delivers personalized, data-driven analysis that helps players understand what happened in their games and how to improve.
+New Meta Match Advisor transforms your League of Legends post-game statistics into actionable coaching insights using artificial intelligence. By combining official Riot Games match data with advanced AI language models, the platform delivers personalized, data-driven analysis that helps players understand what happened in their games and how to improve.
 
 Beyond one-time analysis, players can save matches to a **Personal Dashboard** to track performance over time—storing complete match data including all participant stats, challenges, pings, runes, and objectives for detailed review.
 
@@ -144,7 +144,7 @@ GET /lol/match/v5/matches/{matchId}
 ## Technology
 
 **Backend**: Go web service hosted on Render.com  
-**AI**: Anthropic Claude (claude-sonnet-4-20250514)  
+**AI**: Large Language Model for natural language analysis  
 **Data**: Riot Games Match API v5  
 **Frontend**: Responsive web application (HTML/CSS/JavaScript)  
 **Storage**: Persistent disk for dashboard data (no external database required)
@@ -250,7 +250,7 @@ The platform supports all Riot Games regional routing values:
 - **Post-game only**: Cannot analyze live or ongoing matches
 - **End-game statistics**: Analysis is based on final totals, not moment-by-moment events
 - **AI interpretation**: Insights are AI-generated and should be considered as coaching suggestions, not absolute truths
-- **API rate limits**: Subject to Riot Games and Anthropic API rate limits
+- **API rate limits**: Subject to Riot Games API rate limits
 
 ---
 
@@ -271,7 +271,7 @@ Built by OldBrickFactory.
 
 **Powered by:**
 - [Riot Games API](https://developer.riotgames.com/) — Official League of Legends match data
-- [Anthropic Claude](https://anthropic.com/) — AI-powered analysis generation
+- AI Language Models — Analysis generation
 
 **Website:** [newmeta.pro](https://newmeta.pro)
 
