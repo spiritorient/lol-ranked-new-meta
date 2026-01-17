@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
+	"unicode"
 
 	"lol-ranked-new-meta/types"
 )
@@ -29,8 +31,17 @@ func NewClient(apiKey, region string) *Client {
 
 // GetMatch fetches match details from the Riot Games API
 func (c *Client) GetMatch(matchID string) (*types.RiotMatch, error) {
+	return c.GetMatchWithRegion(matchID, "")
+}
+
+// GetMatchWithRegion fetches match details using an optional routing region override
+func (c *Client) GetMatchWithRegion(matchID, region string) (*types.RiotMatch, error) {
+	routingRegion := NormalizeRoutingRegion(region)
+	if routingRegion == "" {
+		routingRegion = c.region
+	}
 	// Riot API v5 uses regional routing (americas, europe, asia, sea)
-	url := fmt.Sprintf("https://%s.api.riotgames.com/lol/match/v5/matches/%s", c.region, matchID)
+	url := fmt.Sprintf("https://%s.api.riotgames.com/lol/match/v5/matches/%s", routingRegion, matchID)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -89,6 +100,8 @@ func FormatMatchForAnalysis(match *types.RiotMatch, championFilter, summonerFilt
 
 	summary += "\nParticipants:\n"
 	var targetParticipant *types.RiotParticipant
+	filterProvided := strings.TrimSpace(championFilter) != "" || strings.TrimSpace(summonerFilter) != ""
+	filterMatched := false
 	for i := range match.Info.Participants {
 		participant := match.Info.Participants[i]
 		teamName := "Blue"
@@ -102,13 +115,15 @@ func FormatMatchForAnalysis(match *types.RiotMatch, championFilter, summonerFilt
 
 		// Check if this is the target participant for deep dive
 		isTarget := false
-		if championFilter != "" && participant.ChampionName == championFilter {
+		if championFilter != "" && matchesFilter(participant.ChampionName, championFilter) {
 			isTarget = true
 			targetParticipant = &match.Info.Participants[i]
+			filterMatched = true
 		}
-		if summonerFilter != "" && participant.SummonerName == summonerFilter {
+		if summonerFilter != "" && matchesFilter(participant.SummonerName, summonerFilter) {
 			isTarget = true
 			targetParticipant = &match.Info.Participants[i]
+			filterMatched = true
 		}
 
 		marker := ""
@@ -135,15 +150,24 @@ func FormatMatchForAnalysis(match *types.RiotMatch, championFilter, summonerFilt
 	if targetParticipant != nil {
 		summary += "\n=== DETAILED STATS FOR TARGET PLAYER ===\n"
 		summary += FormatParticipantDeepDive(targetParticipant, match.Info.GameDuration)
-		
+
 		// Add opponent composition analysis
 		summary += "\n=== OPPONENT COMPOSITION ===\n"
 		summary += FormatOpponentComposition(match, targetParticipant)
-		
+
 		// Add item build timeline
 		summary += "\n=== ITEM BUILD TIMELINE ===\n"
 		summary += FormatItemBuildTimeline(targetParticipant, match.Info.GameDuration)
 	}
+
+	if filterProvided && !filterMatched {
+		summary += "\nNOTE: No participant matched the provided champion/summoner filter. Deep dive details may be limited.\n"
+	}
+
+	summary += "\nDATA LIMITATIONS:\n"
+	summary += "- No event timeline or objective timestamps are available in this summary.\n"
+	summary += "- Item names and exact purchase times are not included (IDs only).\n"
+	summary += "- Do not infer exact timings unless explicitly provided above.\n"
 
 	return summary
 }
@@ -152,7 +176,7 @@ func FormatMatchForAnalysis(match *types.RiotMatch, championFilter, summonerFilt
 func FormatOpponentComposition(match *types.RiotMatch, targetParticipant *types.RiotParticipant) string {
 	var opponentTeam string
 	var allyTeam string
-	
+
 	if targetParticipant.TeamID == 100 {
 		opponentTeam = "Red"
 		allyTeam = "Blue"
@@ -160,7 +184,7 @@ func FormatOpponentComposition(match *types.RiotMatch, targetParticipant *types.
 		opponentTeam = "Blue"
 		allyTeam = "Red"
 	}
-	
+
 	var comp string
 	comp += fmt.Sprintf("Your Team (%s):\n", allyTeam)
 	for _, p := range match.Info.Participants {
@@ -168,12 +192,12 @@ func FormatOpponentComposition(match *types.RiotMatch, targetParticipant *types.
 			comp += fmt.Sprintf("- %s (%s) - %s\n", p.SummonerName, p.ChampionName, p.TeamPosition)
 		}
 	}
-	
+
 	comp += fmt.Sprintf("\nOpponent Team (%s):\n", opponentTeam)
 	for _, p := range match.Info.Participants {
 		if p.TeamID != targetParticipant.TeamID {
 			comp += fmt.Sprintf("- %s (%s) - %s\n", p.SummonerName, p.ChampionName, p.TeamPosition)
-			
+
 			// Find lane opponent
 			if p.TeamPosition == targetParticipant.TeamPosition && p.TeamPosition != "" {
 				comp += fmt.Sprintf("  -> LANE OPPONENT: %s vs %s\n", targetParticipant.ChampionName, p.ChampionName)
@@ -187,7 +211,7 @@ func FormatOpponentComposition(match *types.RiotMatch, targetParticipant *types.
 			}
 		}
 	}
-	
+
 	return comp
 }
 
@@ -207,10 +231,10 @@ func FormatItemBuildTimeline(participant *types.RiotParticipant, gameDuration in
 		{5, participant.Item5, "Item 6"},
 		{6, participant.Item6, "Trinket"},
 	}
-	
+
 	timeline += fmt.Sprintf("Total Items Purchased: %d\n", participant.ItemsPurchased)
 	timeline += "Final Build:\n"
-	
+
 	for _, item := range items {
 		if item.id != 0 {
 			timeline += fmt.Sprintf("- %s: Item ID %d", item.name, item.id)
@@ -220,12 +244,12 @@ func FormatItemBuildTimeline(participant *types.RiotParticipant, gameDuration in
 			timeline += "\n"
 		}
 	}
-	
+
 	// Calculate approximate timing (rough estimate based on gold earned)
 	goldPerMinute := float64(participant.GoldEarned) / (float64(gameDuration) / 60.0)
 	timeline += fmt.Sprintf("\nGold Income: %.0f gold/minute\n", goldPerMinute)
 	timeline += "Note: Exact item purchase times require timeline data from Riot API match timeline endpoint\n"
-	
+
 	return timeline
 }
 
@@ -318,4 +342,88 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// SelectDefaultParticipant selects a reasonable deep dive target when none is provided
+func SelectDefaultParticipant(match *types.RiotMatch) *types.RiotParticipant {
+	if match == nil || len(match.Info.Participants) == 0 {
+		return nil
+	}
+
+	var best *types.RiotParticipant
+	for i := range match.Info.Participants {
+		participant := &match.Info.Participants[i]
+		if best == nil {
+			best = participant
+			continue
+		}
+		if participant.TotalDamageDealtToChampions > best.TotalDamageDealtToChampions {
+			best = participant
+			continue
+		}
+		if participant.TotalDamageDealtToChampions == best.TotalDamageDealtToChampions &&
+			participant.GoldEarned > best.GoldEarned {
+			best = participant
+		}
+	}
+	return best
+}
+
+// RoutingRegionFromMatchID derives routing region from a match ID prefix (e.g., EUW1_123 -> europe)
+func RoutingRegionFromMatchID(matchID string) string {
+	if matchID == "" {
+		return ""
+	}
+	parts := strings.Split(matchID, "_")
+	if len(parts) < 2 {
+		return ""
+	}
+	return RoutingRegionFromPlatform(parts[0])
+}
+
+// RoutingRegionFromPlatform maps platform codes to routing regions
+func RoutingRegionFromPlatform(platform string) string {
+	switch strings.ToUpper(strings.TrimSpace(platform)) {
+	case "NA1", "BR1", "LA1", "LA2", "OC1":
+		return "americas"
+	case "EUW1", "EUN1", "TR1", "RU":
+		return "europe"
+	case "KR", "JP1":
+		return "asia"
+	case "PH2", "SG2", "TH2", "TW2", "VN2":
+		return "sea"
+	default:
+		return ""
+	}
+}
+
+// NormalizeRoutingRegion normalizes routing region names
+func NormalizeRoutingRegion(region string) string {
+	switch strings.ToLower(strings.TrimSpace(region)) {
+	case "americas", "europe", "asia", "sea":
+		return strings.ToLower(strings.TrimSpace(region))
+	default:
+		return ""
+	}
+}
+
+func normalizeKey(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	var b strings.Builder
+	for _, r := range trimmed {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			b.WriteRune(unicode.ToLower(r))
+		}
+	}
+	return b.String()
+}
+
+func matchesFilter(value, filter string) bool {
+	if strings.TrimSpace(filter) == "" {
+		return false
+	}
+	return normalizeKey(value) == normalizeKey(filter)
 }

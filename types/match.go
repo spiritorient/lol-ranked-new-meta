@@ -2,41 +2,43 @@ package types
 
 // MatchRequest represents the incoming request for match analysis
 type MatchRequest struct {
-	MatchID       string   `json:"match_id"`
-	Region        string   `json:"region,omitempty"`        // Optional: overrides default region
-	ChampionName  string   `json:"champion_name,omitempty"` // Optional: for deep dive analysis on specific champion
-	SummonerName  string   `json:"summoner_name,omitempty"` // Optional: for deep dive analysis on specific summoner
-	FocusAreas    []string `json:"focus_areas,omitempty"`   // Optional: which data aspects to analyze deeply (combat, vision, objectives, items, matchup, economy, farming)
+	MatchID      string   `json:"match_id"`
+	Region       string   `json:"region,omitempty"`        // Optional: overrides default region
+	ChampionName string   `json:"champion_name,omitempty"` // Optional: for deep dive analysis on specific champion
+	SummonerName string   `json:"summoner_name,omitempty"` // Optional: for deep dive analysis on specific summoner
+	FocusAreas   []string `json:"focus_areas,omitempty"`   // Optional: which data aspects to analyze deeply (combat, vision, objectives, items, matchup, economy, farming)
 }
 
 // MatchResponse represents the response from the match advisor
 type MatchResponse struct {
-	MatchID          string            `json:"match_id"`
-	Analysis         string            `json:"analysis"`
-	Suggestions      []string          `json:"suggestions"`
-	CoachingTips     []string          `json:"coaching_tips"`
-	ChampionDeepDive string            `json:"champion_deep_dive,omitempty"` // Optional: deep dive analysis for specific champion
+	MatchID            string              `json:"match_id"`
+	Analysis           string              `json:"analysis"`
+	Suggestions        []string            `json:"suggestions"`
+	CoachingTips       []string            `json:"coaching_tips"`
+	ChampionDeepDive   string              `json:"champion_deep_dive,omitempty"`  // Optional: deep dive analysis for specific champion
 	StructuredInsights *StructuredInsights `json:"structured_insights,omitempty"` // New: structured data-driven insights
-	Error            string            `json:"error,omitempty"`
+	DeepDiveTarget     string              `json:"deep_dive_target,omitempty"`
+	DeepDiveMode       string              `json:"deep_dive_mode,omitempty"` // requested, auto, match
+	Error              string              `json:"error,omitempty"`
 }
 
 // StructuredInsights provides specific, data-driven insights about the match
 type StructuredInsights struct {
-	WhatWentWell     []SpecificEvent `json:"what_went_well"`
-	WhatWentWrong    []SpecificEvent `json:"what_went_wrong"`
-	CriticalMoments  []CriticalMoment `json:"critical_moments"`
-	ItemAnalysis     *ItemAnalysis    `json:"item_analysis,omitempty"`
-	MatchupAnalysis  *MatchupAnalysis `json:"matchup_analysis,omitempty"`
-	KeyStatistics    KeyStatistics    `json:"key_statistics"`
+	WhatWentWell    []SpecificEvent  `json:"what_went_well"`
+	WhatWentWrong   []SpecificEvent  `json:"what_went_wrong"`
+	CriticalMoments []CriticalMoment `json:"critical_moments"`
+	ItemAnalysis    *ItemAnalysis    `json:"item_analysis,omitempty"`
+	MatchupAnalysis *MatchupAnalysis `json:"matchup_analysis,omitempty"`
+	KeyStatistics   KeyStatistics    `json:"key_statistics"`
 }
 
 // SpecificEvent represents a concrete event that happened in the match
 type SpecificEvent struct {
-	Title       string   `json:"title"`        // e.g., "Early First Blood"
-	Description string   `json:"description"`  // What actually happened
-	Impact      string   `json:"impact"`       // Why it mattered
-	Data        []string `json:"data"`         // Supporting data/numbers
-	Category    string   `json:"category"`     // "objective", "combat", "vision", "farming", etc.
+	Title       string   `json:"title"`       // e.g., "Early First Blood"
+	Description string   `json:"description"` // What actually happened
+	Impact      string   `json:"impact"`      // Why it mattered
+	Data        []string `json:"data"`        // Supporting data/numbers
+	Category    string   `json:"category"`    // "objective", "combat", "vision", "farming", etc.
 }
 
 // CriticalMoment represents a key moment in the game
@@ -50,41 +52,41 @@ type CriticalMoment struct {
 
 // ItemAnalysis provides detailed item build analysis
 type ItemAnalysis struct {
-	BuildPath      []ItemTiming `json:"build_path"`
-	TimingAnalysis string       `json:"timing_analysis"`
-	OpponentMatchup string      `json:"opponent_matchup"` // How items countered opponent composition
-	Recommendations []string    `json:"recommendations"`
+	BuildPath       []ItemTiming `json:"build_path"`
+	TimingAnalysis  string       `json:"timing_analysis"`
+	OpponentMatchup string       `json:"opponent_matchup"` // How items countered opponent composition
+	Recommendations []string     `json:"recommendations"`
 }
 
 // ItemTiming represents when an item was purchased
 type ItemTiming struct {
-	ItemID    int    `json:"item_id"`
-	ItemName  string `json:"item_name,omitempty"`
+	ItemID     int    `json:"item_id"`
+	ItemName   string `json:"item_name,omitempty"`
 	TimeBought string `json:"time_bought"` // e.g., "12:34" or "early/mid/late"
-	Context   string `json:"context"`      // Why this item at this time
+	Context    string `json:"context"`     // Why this item at this time
 }
 
 // MatchupAnalysis provides champion matchup and team composition analysis
 type MatchupAnalysis struct {
-	LaneMatchup      string   `json:"lane_matchup"`       // How the champion fared vs opponent
-	TeamComposition  string   `json:"team_composition"`   // Overall team comp analysis
-	Synergies        []string `json:"synergies"`          // Good synergies with teammates
-	Counters         []string `json:"counters"`           // Champion counters in this match
-	WinConditions    []string `json:"win_conditions"`     // What needed to happen to win
+	LaneMatchup     string   `json:"lane_matchup"`     // How the champion fared vs opponent
+	TeamComposition string   `json:"team_composition"` // Overall team comp analysis
+	Synergies       []string `json:"synergies"`        // Good synergies with teammates
+	Counters        []string `json:"counters"`         // Champion counters in this match
+	WinConditions   []string `json:"win_conditions"`   // What needed to happen to win
 }
 
 // KeyStatistics highlights important numbers from the match
 type KeyStatistics struct {
-	Combat      []StatPair `json:"combat"`
-	Objectives  []StatPair `json:"objectives"`
-	Economy     []StatPair `json:"economy"`
-	Vision      []StatPair `json:"vision"`
+	Combat     []StatPair `json:"combat"`
+	Objectives []StatPair `json:"objectives"`
+	Economy    []StatPair `json:"economy"`
+	Vision     []StatPair `json:"vision"`
 }
 
 // StatPair represents a key statistic
 type StatPair struct {
-	Label string `json:"label"`
-	Value string `json:"value"`
+	Label   string `json:"label"`
+	Value   string `json:"value"`
 	Context string `json:"context,omitempty"` // Additional context or comparison
 }
 
@@ -102,21 +104,21 @@ type RiotMatchMetadata struct {
 }
 
 type RiotMatchInfo struct {
-	GameCreation       int64                `json:"gameCreation"`
-	GameDuration       int64                `json:"gameDuration"`
-	GameEndTimestamp   int64                `json:"gameEndTimestamp"`
-	GameID             int64                `json:"gameId"`
-	GameMode           string               `json:"gameMode"`
-	GameName           string               `json:"gameName"`
-	GameStartTimestamp int64                `json:"gameStartTimestamp"`
-	GameType           string               `json:"gameType"`
-	GameVersion        string               `json:"gameVersion"`
-	MapID              int                  `json:"mapId"`
-	Participants       []RiotParticipant    `json:"participants"`
-	PlatformID         string               `json:"platformId"`
-	QueueID            int                  `json:"queueId"`
-	Teams              []RiotTeam           `json:"teams"`
-	TournamentCode     string               `json:"tournamentCode"`
+	GameCreation       int64             `json:"gameCreation"`
+	GameDuration       int64             `json:"gameDuration"`
+	GameEndTimestamp   int64             `json:"gameEndTimestamp"`
+	GameID             int64             `json:"gameId"`
+	GameMode           string            `json:"gameMode"`
+	GameName           string            `json:"gameName"`
+	GameStartTimestamp int64             `json:"gameStartTimestamp"`
+	GameType           string            `json:"gameType"`
+	GameVersion        string            `json:"gameVersion"`
+	MapID              int               `json:"mapId"`
+	Participants       []RiotParticipant `json:"participants"`
+	PlatformID         string            `json:"platformId"`
+	QueueID            int               `json:"queueId"`
+	Teams              []RiotTeam        `json:"teams"`
+	TournamentCode     string            `json:"tournamentCode"`
 }
 
 type RiotParticipant struct {
@@ -140,10 +142,10 @@ type RiotParticipant struct {
 	DangerPings                    int                    `json:"dangerPings"`
 	Deaths                         int                    `json:"deaths"`
 	DetectorWardsPlaced            int                    `json:"detectorWardsPlaced"`
-	DoubleKills                     int                    `json:"doubleKills"`
-	DragonKills                     int                    `json:"dragonKills"`
-	EnemyMissingPings               int                    `json:"enemyMissingPings"`
-	EnemyVisionPings                int                    `json:"enemyVisionPings"`
+	DoubleKills                    int                    `json:"doubleKills"`
+	DragonKills                    int                    `json:"dragonKills"`
+	EnemyMissingPings              int                    `json:"enemyMissingPings"`
+	EnemyVisionPings               int                    `json:"enemyVisionPings"`
 	FirstBloodAssist               bool                   `json:"firstBloodAssist"`
 	FirstBloodKill                 bool                   `json:"firstBloodKill"`
 	FirstTowerAssist               bool                   `json:"firstTowerAssist"`
@@ -242,8 +244,8 @@ type RiotParticipant struct {
 }
 
 type RiotPerks struct {
-	StatPerks RiotStatPerks      `json:"statPerks"`
-	Styles    []RiotPerkStyle    `json:"styles"`
+	StatPerks RiotStatPerks   `json:"statPerks"`
+	Styles    []RiotPerkStyle `json:"styles"`
 }
 
 type RiotStatPerks struct {
@@ -253,9 +255,9 @@ type RiotStatPerks struct {
 }
 
 type RiotPerkStyle struct {
-	Description string          `json:"description"`
+	Description string              `json:"description"`
 	Selections  []RiotPerkSelection `json:"selections"`
-	Style       int             `json:"style"`
+	Style       int                 `json:"style"`
 }
 
 type RiotPerkSelection struct {
@@ -266,10 +268,10 @@ type RiotPerkSelection struct {
 }
 
 type RiotTeam struct {
-	Bans       []RiotBan `json:"bans"`
+	Bans       []RiotBan      `json:"bans"`
 	Objectives RiotObjectives `json:"objectives"`
-	TeamID     int       `json:"teamId"`
-	Win        bool      `json:"win"`
+	TeamID     int            `json:"teamId"`
+	Win        bool           `json:"win"`
 }
 
 type RiotBan struct {
@@ -290,4 +292,3 @@ type RiotObjective struct {
 	First bool `json:"first"`
 	Kills int  `json:"kills"`
 }
-

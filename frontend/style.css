@@ -386,6 +386,12 @@ header p {
     color: var(--primary);
 }
 
+.stat-card .context {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
 .hidden {
     display: none;
 }

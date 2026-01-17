@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -50,27 +51,38 @@ func (h *MatchHandler) HandleAnalyzeMatch(w http.ResponseWriter, r *http.Request
 
 	// Fetch match data from Riot API
 	log.Printf("Fetching match data for match ID: %s", req.MatchID)
-	match, err := h.riotClient.GetMatch(req.MatchID)
+	routingRegion := riot.NormalizeRoutingRegion(req.Region)
+	if routingRegion == "" {
+		routingRegion = riot.RoutingRegionFromMatchID(req.MatchID)
+	}
+	match, err := h.riotClient.GetMatchWithRegion(req.MatchID, routingRegion)
 	if err != nil {
 		log.Printf("Error fetching match: %v", err)
 		h.sendError(w, "Failed to fetch match data: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	championFilter, summonerFilter, deepDiveTarget, deepDiveMode := resolveDeepDiveTarget(match, req.ChampionName, req.SummonerName)
+
 	// Format match data for analysis (with optional champion/summoner filter)
-	matchSummary := riot.FormatMatchForAnalysis(match, req.ChampionName, req.SummonerName)
+	matchSummary := riot.FormatMatchForAnalysis(match, championFilter, summonerFilter)
+	if deepDiveMode == "auto" && deepDiveTarget != "" {
+		matchSummary = fmt.Sprintf("AUTO-SELECTED DEEP DIVE TARGET: %s (based on match impact)\n\n%s", deepDiveTarget, matchSummary)
+	}
 
 	// Analyze match using OpenAI
 	log.Printf("Analyzing match using OpenAI")
-	if req.ChampionName != "" {
-		log.Printf("Deep dive requested for champion: %s", req.ChampionName)
-	} else if req.SummonerName != "" {
-		log.Printf("Deep dive requested for summoner: %s", req.SummonerName)
+	if championFilter != "" {
+		log.Printf("Deep dive requested for champion: %s", championFilter)
+	} else if summonerFilter != "" {
+		log.Printf("Deep dive requested for summoner: %s", summonerFilter)
+	} else {
+		log.Printf("Deep dive target auto-selected")
 	}
 	if len(req.FocusAreas) > 0 {
 		log.Printf("Focus areas requested: %v", req.FocusAreas)
 	}
-	analysis, err := h.openaiClient.AnalyzeMatch(r.Context(), matchSummary, req.ChampionName, req.SummonerName, req.FocusAreas)
+	analysis, err := h.openaiClient.AnalyzeMatch(r.Context(), matchSummary, championFilter, summonerFilter, req.FocusAreas)
 	if err != nil {
 		log.Printf("Error analyzing match: %v", err)
 		h.sendError(w, "Failed to analyze match: "+err.Error(), http.StatusInternalServerError)
@@ -79,6 +91,8 @@ func (h *MatchHandler) HandleAnalyzeMatch(w http.ResponseWriter, r *http.Request
 
 	// Set match ID in response
 	analysis.MatchID = req.MatchID
+	analysis.DeepDiveTarget = deepDiveTarget
+	analysis.DeepDiveMode = deepDiveMode
 
 	// Send response
 	w.WriteHeader(http.StatusOK)
@@ -107,7 +121,8 @@ func (h *MatchHandler) HandleAnalyzeMatchGET(w http.ResponseWriter, r *http.Requ
 	// Get optional champion/summoner filter from query params
 	championFilter := r.URL.Query().Get("champion_name")
 	summonerFilter := r.URL.Query().Get("summoner_name")
-	
+	regionParam := r.URL.Query().Get("region")
+
 	// Get optional focus areas from query params (comma-separated)
 	var focusAreas []string
 	if focusAreasStr := r.URL.Query().Get("focus_areas"); focusAreasStr != "" {
@@ -119,15 +134,24 @@ func (h *MatchHandler) HandleAnalyzeMatchGET(w http.ResponseWriter, r *http.Requ
 
 	// Fetch match data from Riot API
 	log.Printf("Fetching match data for match ID: %s", matchID)
-	match, err := h.riotClient.GetMatch(matchID)
+	routingRegion := riot.NormalizeRoutingRegion(regionParam)
+	if routingRegion == "" {
+		routingRegion = riot.RoutingRegionFromMatchID(matchID)
+	}
+	match, err := h.riotClient.GetMatchWithRegion(matchID, routingRegion)
 	if err != nil {
 		log.Printf("Error fetching match: %v", err)
 		h.sendError(w, "Failed to fetch match data: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	championFilter, summonerFilter, deepDiveTarget, deepDiveMode := resolveDeepDiveTarget(match, championFilter, summonerFilter)
+
 	// Format match data for analysis (with optional champion/summoner filter)
 	matchSummary := riot.FormatMatchForAnalysis(match, championFilter, summonerFilter)
+	if deepDiveMode == "auto" && deepDiveTarget != "" {
+		matchSummary = fmt.Sprintf("AUTO-SELECTED DEEP DIVE TARGET: %s (based on match impact)\n\n%s", deepDiveTarget, matchSummary)
+	}
 
 	// Analyze match using OpenAI
 	log.Printf("Analyzing match using OpenAI")
@@ -135,6 +159,8 @@ func (h *MatchHandler) HandleAnalyzeMatchGET(w http.ResponseWriter, r *http.Requ
 		log.Printf("Deep dive requested for champion: %s", championFilter)
 	} else if summonerFilter != "" {
 		log.Printf("Deep dive requested for summoner: %s", summonerFilter)
+	} else {
+		log.Printf("Deep dive target auto-selected")
 	}
 	if len(focusAreas) > 0 {
 		log.Printf("Focus areas requested: %v", focusAreas)
@@ -148,6 +174,8 @@ func (h *MatchHandler) HandleAnalyzeMatchGET(w http.ResponseWriter, r *http.Requ
 
 	// Set match ID in response
 	analysis.MatchID = matchID
+	analysis.DeepDiveTarget = deepDiveTarget
+	analysis.DeepDiveMode = deepDiveMode
 
 	// Send response
 	w.WriteHeader(http.StatusOK)
@@ -162,4 +190,21 @@ func (h *MatchHandler) sendError(w http.ResponseWriter, message string, statusCo
 	}
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(response)
+}
+
+func resolveDeepDiveTarget(match *types.RiotMatch, championFilter, summonerFilter string) (string, string, string, string) {
+	if strings.TrimSpace(championFilter) != "" || strings.TrimSpace(summonerFilter) != "" {
+		targetLabel := championFilter
+		if strings.TrimSpace(summonerFilter) != "" {
+			targetLabel = summonerFilter
+		}
+		return championFilter, summonerFilter, targetLabel, "requested"
+	}
+
+	target := riot.SelectDefaultParticipant(match)
+	if target == nil {
+		return "", "", "Match Overview", "match"
+	}
+
+	return "", target.SummonerName, fmt.Sprintf("%s (%s)", target.SummonerName, target.ChampionName), "auto"
 }

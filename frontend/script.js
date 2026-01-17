@@ -4,6 +4,33 @@ const API_URL = window.location.origin;
 let matchData = null;
 let currentDashboardID = localStorage.getItem('dashboardID') || '';
 
+function escapeHTML(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatInline(value) {
+    return escapeHTML(value).replace(/\n/g, '<br>');
+}
+
+function formatText(value) {
+    if (!value) {
+        return '';
+    }
+    const escaped = escapeHTML(value);
+    return escaped
+        .split(/\n{2,}/)
+        .map(block => `<p>${block.replace(/\n/g, '<br>')}</p>`)
+        .join('');
+}
+
 async function analyzeMatch() {
     const region = document.getElementById('region').value.trim();
     const gameId = document.getElementById('gameId').value.trim();
@@ -40,7 +67,7 @@ async function analyzeMatch() {
 
     try {
         // Build URL with query params
-        let url = `${API_URL}/analyze-match-get?match_id=${encodeURIComponent(matchId)}`;
+        let url = `${API_URL}/analyze-match-get?match_id=${encodeURIComponent(matchId)}&region=${encodeURIComponent(region)}`;
         
         if (focusType === 'champion' && focusValue) {
             url += `&champion_name=${encodeURIComponent(focusValue)}`;
@@ -117,27 +144,40 @@ function switchTab(tabName) {
 
 function renderOverview(data) {
     let html = '<div class="stats-grid">';
-    html += `<div class="stat-card"><div class="label">Match ID</div><div class="value">${data.match_id || 'N/A'}</div></div>`;
+    html += `<div class="stat-card"><div class="label">Match ID</div><div class="value">${escapeHTML(data.match_id || 'N/A')}</div></div>`;
+    if (data.deep_dive_target) {
+        const mode = data.deep_dive_mode ? ` (${data.deep_dive_mode})` : '';
+        html += `<div class="stat-card"><div class="label">Deep Dive Target</div><div class="value">${escapeHTML(data.deep_dive_target)}${escapeHTML(mode)}</div></div>`;
+    }
     
     if (data.structured_insights && data.structured_insights.key_statistics) {
         const stats = data.structured_insights.key_statistics;
-        if (stats.combat) {
-            stats.combat.forEach(stat => {
-                html += `<div class="stat-card"><div class="label">${stat.label}</div><div class="value">${stat.value}</div></div>`;
+        const addStats = (items) => {
+            if (!items) return;
+            items.forEach(stat => {
+                html += `<div class="stat-card"><div class="label">${escapeHTML(stat.label)}</div><div class="value">${escapeHTML(stat.value)}</div>`;
+                if (stat.context) {
+                    html += `<div class="context">${escapeHTML(stat.context)}</div>`;
+                }
+                html += `</div>`;
             });
-        }
+        };
+        addStats(stats.combat);
+        addStats(stats.objectives);
+        addStats(stats.economy);
+        addStats(stats.vision);
     }
     
     html += '</div>';
     
     html += '<div class="deep-dive-content">';
     html += `<h2>Match Analysis</h2>`;
-    html += `<p>${data.analysis || 'Analysis not available'}</p>`;
+    html += `${formatText(data.analysis || 'Analysis not available')}`;
     
     if (data.suggestions && data.suggestions.length > 0) {
         html += `<h3 style="margin-top: 24px;">Suggestions</h3><ul>`;
         data.suggestions.forEach(s => {
-            html += `<li>${s}</li>`;
+            html += `<li>${formatInline(s)}</li>`;
         });
         html += `</ul>`;
     }
@@ -152,15 +192,15 @@ function renderWhatWentWell(data) {
     if (data.structured_insights && data.structured_insights.what_went_well && data.structured_insights.what_went_well.length > 0) {
         data.structured_insights.what_went_well.forEach(event => {
             html += `<div class="event-card positive">`;
-            html += `<h3>${event.title}</h3>`;
-            html += `<div class="description">${event.description}</div>`;
+            html += `<h3>${escapeHTML(event.title)}</h3>`;
+            html += `<div class="description">${formatInline(event.description)}</div>`;
             if (event.impact) {
-                html += `<div class="impact">${event.impact}</div>`;
+                html += `<div class="impact">${formatInline(event.impact)}</div>`;
             }
             if (event.data && event.data.length > 0) {
                 html += `<div class="data">`;
                 event.data.forEach(d => {
-                    html += `<span class="data-badge">${d}</span>`;
+                    html += `<span class="data-badge">${escapeHTML(d)}</span>`;
                 });
                 html += `</div>`;
             }
@@ -174,7 +214,7 @@ function renderWhatWentWell(data) {
         html += `</div>`;
         if (data.analysis) {
             html += `<div class="deep-dive-content" style="margin-top: 20px;">`;
-            html += `<p>${data.analysis}</p>`;
+            html += `${formatText(data.analysis)}`;
             html += `</div>`;
         }
     }
@@ -187,15 +227,15 @@ function renderWhatWentWrong(data) {
     if (data.structured_insights && data.structured_insights.what_went_wrong && data.structured_insights.what_went_wrong.length > 0) {
         data.structured_insights.what_went_wrong.forEach(event => {
             html += `<div class="event-card negative">`;
-            html += `<h3>${event.title}</h3>`;
-            html += `<div class="description">${event.description}</div>`;
+            html += `<h3>${escapeHTML(event.title)}</h3>`;
+            html += `<div class="description">${formatInline(event.description)}</div>`;
             if (event.impact) {
-                html += `<div class="impact">${event.impact}</div>`;
+                html += `<div class="impact">${formatInline(event.impact)}</div>`;
             }
             if (event.data && event.data.length > 0) {
                 html += `<div class="data">`;
                 event.data.forEach(d => {
-                    html += `<span class="data-badge">${d}</span>`;
+                    html += `<span class="data-badge">${escapeHTML(d)}</span>`;
                 });
                 html += `</div>`;
             }
@@ -209,7 +249,7 @@ function renderWhatWentWrong(data) {
         html += `</div>`;
         if (data.analysis) {
             html += `<div class="deep-dive-content" style="margin-top: 20px;">`;
-            html += `<p>${data.analysis}</p>`;
+            html += `${formatText(data.analysis)}`;
             html += `</div>`;
         }
     }
@@ -222,18 +262,18 @@ function renderCriticalMoments(data) {
     if (data.structured_insights && data.structured_insights.critical_moments && data.structured_insights.critical_moments.length > 0) {
         data.structured_insights.critical_moments.forEach(moment => {
             html += `<div class="event-card critical">`;
-            html += `<h3>${moment.title}</h3>`;
-            html += `<div class="description">${moment.description}</div>`;
+            html += `<h3>${escapeHTML(moment.title)}</h3>`;
+            html += `<div class="description">${formatInline(moment.description)}</div>`;
             if (moment.outcome) {
-                html += `<div class="impact"><strong>Outcome:</strong> ${moment.outcome}</div>`;
+                html += `<div class="impact"><strong>Outcome:</strong> ${formatInline(moment.outcome)}</div>`;
             }
             if (moment.impact) {
-                html += `<div class="impact">${moment.impact}</div>`;
+                html += `<div class="impact">${formatInline(moment.impact)}</div>`;
             }
             if (moment.data && moment.data.length > 0) {
                 html += `<div class="data">`;
                 moment.data.forEach(d => {
-                    html += `<span class="data-badge">${d}</span>`;
+                    html += `<span class="data-badge">${escapeHTML(d)}</span>`;
                 });
                 html += `</div>`;
             }
@@ -247,7 +287,7 @@ function renderCriticalMoments(data) {
         html += `</div>`;
         if (data.analysis) {
             html += `<div class="deep-dive-content" style="margin-top: 20px;">`;
-            html += `<p>${data.analysis}</p>`;
+            html += `${formatText(data.analysis)}`;
             html += `</div>`;
         }
     }
@@ -261,15 +301,15 @@ function renderItemAnalysis(data) {
         const itemAnalysis = data.structured_insights.item_analysis;
         html += `<div class="deep-dive-content">`;
         if (itemAnalysis.timing_analysis) {
-            html += `<h3>Timing Analysis</h3><p>${itemAnalysis.timing_analysis}</p>`;
+            html += `<h3>Timing Analysis</h3>${formatText(itemAnalysis.timing_analysis)}`;
         }
         if (itemAnalysis.opponent_matchup) {
-            html += `<h3>Opponent Matchup</h3><p>${itemAnalysis.opponent_matchup}</p>`;
+            html += `<h3>Opponent Matchup</h3>${formatText(itemAnalysis.opponent_matchup)}`;
         }
         if (itemAnalysis.recommendations && itemAnalysis.recommendations.length > 0) {
             html += `<h3>Recommendations</h3><ul>`;
             itemAnalysis.recommendations.forEach(r => {
-                html += `<li>${r}</li>`;
+                html += `<li>${formatInline(r)}</li>`;
             });
             html += `</ul>`;
         }
@@ -282,7 +322,7 @@ function renderItemAnalysis(data) {
         html += `</div>`;
         if (data.analysis) {
             html += `<div class="deep-dive-content" style="margin-top: 20px;">`;
-            html += `<p>${data.analysis}</p>`;
+            html += `${formatText(data.analysis)}`;
             html += `</div>`;
         }
     }
@@ -296,29 +336,29 @@ function renderMatchupAnalysis(data) {
         const matchup = data.structured_insights.matchup_analysis;
         html += `<div class="deep-dive-content">`;
         if (matchup.lane_matchup) {
-            html += `<h3>Lane Matchup</h3><p>${matchup.lane_matchup}</p>`;
+            html += `<h3>Lane Matchup</h3>${formatText(matchup.lane_matchup)}`;
         }
         if (matchup.team_composition) {
-            html += `<h3>Team Composition</h3><p>${matchup.team_composition}</p>`;
+            html += `<h3>Team Composition</h3>${formatText(matchup.team_composition)}`;
         }
         if (matchup.synergies && matchup.synergies.length > 0) {
             html += `<h3>Synergies</h3><ul>`;
             matchup.synergies.forEach(s => {
-                html += `<li>${s}</li>`;
+                html += `<li>${formatInline(s)}</li>`;
             });
             html += `</ul>`;
         }
         if (matchup.counters && matchup.counters.length > 0) {
             html += `<h3>Counters</h3><ul>`;
             matchup.counters.forEach(c => {
-                html += `<li>${c}</li>`;
+                html += `<li>${formatInline(c)}</li>`;
             });
             html += `</ul>`;
         }
         if (matchup.win_conditions && matchup.win_conditions.length > 0) {
             html += `<h3>Win Conditions</h3><ul>`;
             matchup.win_conditions.forEach(w => {
-                html += `<li>${w}</li>`;
+                html += `<li>${formatInline(w)}</li>`;
             });
             html += `</ul>`;
         }
@@ -331,7 +371,7 @@ function renderMatchupAnalysis(data) {
         html += `</div>`;
         if (data.analysis) {
             html += `<div class="deep-dive-content" style="margin-top: 20px;">`;
-            html += `<p>${data.analysis}</p>`;
+            html += `${formatText(data.analysis)}`;
             html += `</div>`;
         }
     }
@@ -341,9 +381,16 @@ function renderMatchupAnalysis(data) {
 function renderDeepDive(data) {
     let html = '<h2>🔍 Deep Dive Analysis</h2>';
     html += `<div class="deep-dive-content">`;
+
+    if (data.deep_dive_target) {
+        const modeLabel = data.deep_dive_mode ? ` (${data.deep_dive_mode})` : '';
+        html += `<div class="info-message" style="margin-bottom: 16px;">`;
+        html += `<p><strong>Deep dive target:</strong> ${escapeHTML(data.deep_dive_target)}${escapeHTML(modeLabel)}</p>`;
+        html += `</div>`;
+    }
     
     if (data.champion_deep_dive) {
-        html += data.champion_deep_dive;
+        html += `${formatText(data.champion_deep_dive)}`;
     } else {
         html += `<div class="info-message">`;
         html += `<p>💡 <strong>Deep dive analysis not available.</strong></p>`;
@@ -458,11 +505,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (e.target.value === 'none') {
                 focusValue.classList.add('hidden');
-                focusAreasGroup.style.display = 'none';
                 focusValue.placeholder = 'Enter champion or player name';
             } else {
                 focusValue.classList.remove('hidden');
-                focusAreasGroup.style.display = 'block';
                 if (e.target.value === 'champion') {
                     focusValue.placeholder = 'Enter champion name (e.g., Nautilus)';
                 } else {

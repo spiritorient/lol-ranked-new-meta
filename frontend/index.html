@@ -38,11 +38,11 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>Focus Analysis On (Optional - for deep dive)</label>
+                <label>Deep Dive Focus (Optional - overrides auto selection)</label>
                 <div class="focus-selector">
                     <label class="radio-label">
                         <input type="radio" name="focusType" value="none" checked>
-                        <span>General Match Analysis</span>
+                        <span>Auto-select Best Focus</span>
                     </label>
                     <label class="radio-label">
                         <input type="radio" name="focusType" value="champion">
@@ -56,7 +56,7 @@
                 <input type="text" id="focusValue" placeholder="Enter champion or player name" class="hidden">
             </div>
             
-            <div class="form-group" id="focusAreasGroup" style="display: none;">
+            <div class="form-group" id="focusAreasGroup">
                 <label>Select Data to Analyze Deeply (Optional)</label>
                 <div class="checkbox-group">
                     <label class="checkbox-label">
@@ -88,7 +88,7 @@
                         <span>🌾 Farming</span>
                     </label>
                 </div>
-                <p class="help-text">💡 Tip: Select specific areas to get more detailed analysis on those aspects</p>
+                <p class="help-text">💡 Tip: These apply to all analyses, even when auto-selecting a focus target</p>
             </div>
             
             <div class="form-group" id="dashboardIdGroup">
